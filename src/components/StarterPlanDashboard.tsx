@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
 import { generateWeeklyPlan } from '../engine/planEngine'
 import { rebuildEditedPlan, swapMealInEditedPlan } from '../engine/planEditor'
+import { RecipeDetailDrawer } from './RecipeDetailDrawer'
+import { BrowserLocationError, requestBrowserLocation, type BrowserCoordinates } from '../services/browserLocation'
 import type { IngredientDefinition, PlannedMeal, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
 import '../plan-engine.css'
 import '../meal-editor.css'
+import '../recipe-detail.css'
 
 type StarterPlanDashboardProps = {
   profile: UserPlanProfile
@@ -12,6 +15,12 @@ type StarterPlanDashboardProps = {
 }
 
 type DashboardTab = 'week' | 'shopping'
+type SelectedMeal = { dayIndex: number; mealIndex: number }
+type LocationStatus = {
+  status: 'idle' | 'loading' | 'success' | 'error'
+  coords?: BrowserCoordinates
+  message?: string
+}
 
 const CATEGORY_ORDER: IngredientDefinition['category'][] = [
   'Protein',
@@ -58,6 +67,8 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
   const [plan, setPlan] = useState<WeeklyPlan>(() => generateWeeklyPlan(profile, 1))
   const [lockedMeals, setLockedMeals] = useState<Set<string>>(() => new Set())
   const [notice, setNotice] = useState<string | null>(null)
+  const [selectedMeal, setSelectedMeal] = useState<SelectedMeal | null>(null)
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>({ status: 'idle' })
 
   const shoppingGroups = useMemo(() => CATEGORY_ORDER
     .map((category) => ({
@@ -69,6 +80,8 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
   const budgetOkay = plan.remainingBudget >= 0
   const calorieDelta = plan.averageCalories - plan.nutritionTargets.calories
   const proteinDelta = plan.averageProtein - plan.nutritionTargets.protein
+  const selectedMealValue = selectedMeal ? plan.days[selectedMeal.dayIndex]?.meals[selectedMeal.mealIndex] : undefined
+  const selectedMealLocked = selectedMeal ? lockedMeals.has(mealKey(selectedMeal.dayIndex, selectedMeal.mealIndex)) : false
 
   const toggleMealLock = (dayIndex: number, mealIndex: number) => {
     const key = mealKey(dayIndex, mealIndex)
@@ -135,6 +148,23 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
       : 'Hafta yeni bir kombinasyonla yeniden oluşturuldu.')
   }
 
+  const useLiveLocation = async () => {
+    setLocationStatus({ status: 'loading' })
+    try {
+      const coords = await requestBrowserLocation()
+      setLocationStatus({
+        status: 'success',
+        coords,
+        message: 'Koordinat alındı. Bir sonraki fazda bu noktanın çevresindeki gerçek market ve restoranları arayacağız.',
+      })
+    } catch (error) {
+      const message = error instanceof BrowserLocationError
+        ? error.message
+        : 'Konum alınırken beklenmeyen bir sorun oluştu.'
+      setLocationStatus({ status: 'error', message })
+    }
+  }
+
   return (
     <main className="dashboard-page plan-v1-page">
       <nav className="topbar shell dashboard-nav">
@@ -150,7 +180,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 
       <section className="dashboard-hero shell plan-engine-hero">
         <div>
-          <span className="hero-badge">🧠 Plan motoru v1.1 çalışıyor</span>
+          <span className="hero-badge">🧠 Plan motoru v1.2 çalışıyor</span>
           <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
           <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {profile.neighborhood || profile.district || profile.city}</p>
           <div className="engine-status-row">
@@ -164,6 +194,22 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
           <button type="button" className="shuffle-plan-button" onClick={shufflePlan}>🎲 Kilitler hariç karıştır</button>
           <button type="button" className="edit-plan-button" onClick={onEdit}>⚙️ Tercihleri düzenle</button>
         </div>
+      </section>
+
+      <section className="shell location-bridge-card">
+        <span className="location-bridge-icon">📍</span>
+        <div className="location-bridge-copy">
+          <strong>{locationStatus.status === 'success' ? 'Canlı konum hazır' : 'Konum altyapısının ilk parçası hazır'}</strong>
+          <p>{locationStatus.message ?? `${profile.neighborhood || profile.district || profile.city} bilgisi profilinden geliyor. İstersen tarayıcıdan gerçek koordinatını da alabiliriz; henüz işletme araması yapmıyoruz.`}</p>
+          {locationStatus.coords && (
+            <span className="location-coordinate">
+              {locationStatus.coords.latitude.toFixed(5)}, {locationStatus.coords.longitude.toFixed(5)} • ±{Math.round(locationStatus.coords.accuracy)} m
+            </span>
+          )}
+        </div>
+        <button type="button" className="location-bridge-action" disabled={locationStatus.status === 'loading'} onClick={useLiveLocation}>
+          {locationStatus.status === 'loading' ? 'Konum alınıyor…' : locationStatus.status === 'success' ? 'Konumu yenile' : 'Canlı konumu kullan'}
+        </button>
       </section>
 
       {notice && (
@@ -223,10 +269,23 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
           lockedMeals={lockedMeals}
           onSwap={swapMeal}
           onToggleLock={toggleMealLock}
+          onOpenDetail={(dayIndex, mealIndex) => setSelectedMeal({ dayIndex, mealIndex })}
           onShopping={() => setTab('shopping')}
         />
       ) : (
         <ShoppingView groups={shoppingGroups} plan={plan} onWeek={() => setTab('week')} />
+      )}
+
+      {selectedMeal && selectedMealValue && (
+        <RecipeDetailDrawer
+          meal={selectedMealValue}
+          profile={profile}
+          plan={plan}
+          locked={selectedMealLocked}
+          onClose={() => setSelectedMeal(null)}
+          onSwap={() => swapMeal(selectedMeal.dayIndex, selectedMeal.mealIndex)}
+          onToggleLock={() => toggleMealLock(selectedMeal.dayIndex, selectedMeal.mealIndex)}
+        />
       )}
     </main>
   )
@@ -238,10 +297,11 @@ type WeekViewProps = {
   lockedMeals: Set<string>
   onSwap: (dayIndex: number, mealIndex: number) => void
   onToggleLock: (dayIndex: number, mealIndex: number) => void
+  onOpenDetail: (dayIndex: number, mealIndex: number) => void
   onShopping: () => void
 }
 
-function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onShopping }: WeekViewProps) {
+function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDetail, onShopping }: WeekViewProps) {
   return (
     <>
       <section className="week-section shell engine-week-section">
@@ -249,12 +309,13 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onShopping
           <div>
             <span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span>
             <h2>Gün gün yemek planın</h2>
-            <p>Bir öğünü değiştirebilir veya sevdiğini kilitleyebilirsin. Her değişiklik market sepetini, paket miktarını, bütçeyi ve beslenme özetini yeniden hesaplar.</p>
+            <p>Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açıp Lokma'nın neden seçtiğini görebilirsin.</p>
           </div>
           <button className="shopping-jump-button" type="button" onClick={onShopping}>🛒 Listeye geç →</button>
         </div>
 
         <div className="meal-editor-guide">
+          <span><b>👁 Detay</b> malzeme, hazırlama ve seçim nedenini gösterir.</span>
           <span><b>↻ Değiştir</b> “Bunu istemiyorum” dediğin öğüne yeni alternatif bulur.</span>
           <span><b>🔒 Sabitle</b> sevdiğin öğünü sonraki karıştırmalarda korur.</span>
         </div>
@@ -276,6 +337,7 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onShopping
                       key={meal.id}
                       meal={meal}
                       locked={lockedMeals.has(mealKey(day.index, mealIndex))}
+                      onDetail={() => onOpenDetail(day.index, mealIndex)}
                       onSwap={() => onSwap(day.index, mealIndex)}
                       onToggleLock={() => onToggleLock(day.index, mealIndex)}
                     />
@@ -312,11 +374,12 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onShopping
 type MealRowProps = {
   meal: PlannedMeal
   locked: boolean
+  onDetail: () => void
   onSwap: () => void
   onToggleLock: () => void
 }
 
-function MealRow({ meal, locked, onSwap, onToggleLock }: MealRowProps) {
+function MealRow({ meal, locked, onDetail, onSwap, onToggleLock }: MealRowProps) {
   return (
     <div className={`engine-meal-row editable-meal-row ${locked ? 'is-locked' : ''}`}>
       <span className="meal-slot">{meal.slot}</span>
@@ -333,6 +396,7 @@ function MealRow({ meal, locked, onSwap, onToggleLock }: MealRowProps) {
       <div className="meal-editor-side">
         <div className="meal-tags">{meal.tags.slice(0, 2).map((tag) => <span key={tag}>{tag}</span>)}</div>
         <div className="meal-editor-actions">
+          <button type="button" className="meal-detail-button" onClick={onDetail}>👁 Detay</button>
           <button type="button" className="meal-swap-button" disabled={locked} onClick={onSwap} title={locked ? 'Önce kilidi aç' : 'Bu öğünü başka bir alternatifle değiştir'}><span>↻</span> Değiştir</button>
           <button type="button" className={`meal-lock-button ${locked ? 'active' : ''}`} onClick={onToggleLock} title={locked ? 'Kilidi aç' : 'Bu öğünü sabitle'}>{locked ? '🔒 Kilitli' : '🔓 Sabitle'}</button>
         </div>
@@ -390,7 +454,7 @@ function ShoppingView({ groups, plan, onWeek }: ShoppingViewProps) {
         ))}
       </div>
 
-      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Şimdilik demo fiyat.</strong> Konum fazında bu paketlerin yanına gerçek market, mesafe ve işletme bilgisi gelecek; fiyat entegrasyonu desteklenen kaynaklara göre kademeli bağlanacak.</p></div>
+      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Şimdilik demo fiyat.</strong> Canlı koordinat altyapısı artık hazır. Bir sonraki konum fazında bu paketlerin yanına gerçek market, restoran ve mesafe bilgisi bağlanacak; fiyat entegrasyonu desteklenen kaynaklara göre kademeli gelecek.</p></div>
     </section>
   )
 }
