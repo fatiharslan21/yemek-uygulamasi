@@ -1,7 +1,7 @@
 import type { ShoppingListItem } from '../types'
 import type { NearbyPlace } from './nearbyPlaces'
 
-export type PriceDataKind = 'simulated' | 'live'
+export type PriceDataKind = 'simulated' | 'manual' | 'live'
 
 export type BasketItemQuote = {
   ingredientId: string
