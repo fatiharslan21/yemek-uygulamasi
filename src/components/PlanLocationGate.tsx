@@ -111,16 +111,16 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
         <button className="brand brand-button" type="button" onClick={onBack}>
           <span className="brand-mark">🍋</span><span>lokma</span>
         </button>
-        <span>Planın ilk girdisi • Konum</span>
-        <button type="button" className="ghost-action" onClick={onBack}>← Ana sayfa</button>
+        <span>İlk kurulum • Konum</span>
+        <button type="button" className="ghost-action" onClick={onBack}>← Geri</button>
       </header>
 
       <section className="plan-location-shell shell">
         <div className="plan-location-card">
           <div className="plan-location-copy">
-            <span className="step-kicker">📍 Önce çevreni seçelim</span>
-            <h1>Bu yemek planını <em>nerede</em> kullanacaksın?</h1>
-            <p>Lokma marketleri, restoranları ve fiyat seçeneklerini bu bölgeye göre eşleştirecek. İstersen canlı konumdan otomatik doldur, istersen elle yaz.</p>
+            <span className="step-kicker">📍 İlk adım</span>
+            <h1>Planını <em>çevrene göre</em> kuralım.</h1>
+            <p>Lokma yakındaki gerçek market ve restoranları bu bölge üzerinden tarayacak. Canlı konumdan otomatik doldurabilir veya il, ilçe ve mahalleyi elle yazabilirsin.</p>
           </div>
 
           <div className="location-mode-grid">
@@ -133,12 +133,12 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
               <span className="location-choice-icon">⌖</span>
               <div>
                 <strong>{locationStatus.status === 'loading' ? 'Konum alınıyor…' : 'Canlı konumdan doldur'}</strong>
-                <small>Tarayıcı izin verirse il, ilçe ve mahalleyi otomatik buluruz.</small>
+                <small>İzin verirsen il, ilçe ve mahalleyi otomatik bulmaya çalışırız.</small>
               </div>
               <b>{locationStatus.status === 'success' ? '✓' : '→'}</b>
             </button>
 
-            <div className="manual-location-label"><span>veya</span></div>
+            <div className="manual-location-label"><span>veya elle seç</span></div>
 
             <div className="plan-location-form">
               <label className="input-field">
@@ -180,14 +180,14 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
           <div className="location-plan-preview">
             <span>🧠</span>
             <div>
-              <strong>Bu konum plan boyunca kullanılacak.</strong>
-              <p>Onboarding’de tekrar görebilir ve değiştirebilirsin. Yakındaki market/restoran katmanı geldiğinde aynı konumu doğrudan oraya bağlayacağız.</p>
+              <strong>Konum sadece harita için değil.</strong>
+              <p>Plan tamamlandığında Nearby bu bölgedeki gerçek işletmeleri tarar; restoran adayları dışarı öğünlerine, market adayları alışveriş sepetine bağlanır.</p>
             </div>
           </div>
 
           <div className="plan-location-actions">
             <button type="button" className="back-button" onClick={onBack}>← Geri</button>
-            <button type="button" className="next-button location-next" onClick={continueFlow}>Planı kurmaya devam et <span>→</span></button>
+            <button type="button" className="next-button location-next" onClick={continueFlow}>Devam et <span>→</span></button>
           </div>
         </div>
       </section>
