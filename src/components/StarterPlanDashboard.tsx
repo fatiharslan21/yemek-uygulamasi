@@ -3,6 +3,8 @@ import { generateWeeklyPlan } from '../engine/planEngine'
 import { rebuildEditedPlan, swapMealInEditedPlan } from '../engine/planEditor'
 import { RecipeDetailDrawer } from './RecipeDetailDrawer'
 import { NearbyPlacesPanel } from './NearbyPlacesPanel'
+import { MealBusinessLine } from './MealBusinessLine'
+import { MarketShoppingBridge } from './MarketShoppingBridge'
 import { BrowserLocationError, requestBrowserLocation, type BrowserCoordinates } from '../services/browserLocation'
 import { reverseGeocodeCoordinates, type ResolvedLocation } from '../services/reverseGeocode'
 import type { IngredientDefinition, PlannedMeal, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
@@ -10,6 +12,7 @@ import '../plan-engine.css'
 import '../meal-editor.css'
 import '../recipe-detail.css'
 import '../location-ui.css'
+import '../business-link.css'
 
 type StarterPlanDashboardProps = {
   profile: UserPlanProfile
@@ -191,7 +194,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 
       <section className="dashboard-hero shell plan-engine-hero">
         <div>
-          <span className="hero-badge">🧠 Plan motoru v1.4 çalışıyor</span>
+          <span className="hero-badge">🧠 Plan motoru v1.5 çalışıyor</span>
           <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
           <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {readableTitle}</p>
           <div className="engine-status-row">
@@ -278,7 +281,7 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDeta
           <div><span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span><h2>Gün gün yemek planın</h2><p>Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açıp Lokma'nın neden seçtiğini ve nasıl pişireceğini görebilirsin.</p></div>
           <button className="shopping-jump-button" type="button" onClick={onShopping}>🛒 Listeye geç →</button>
         </div>
-        <div className="meal-editor-guide"><span><b>👁 Detay</b> malzeme + Ocak/Fırın/Airfryer seçeneklerini gösterir.</span><span><b>↻ Değiştir</b> yeni alternatif bulur.</span><span><b>🔒 Sabitle</b> sonraki karıştırmalarda korur.</span></div>
+        <div className="meal-editor-guide"><span><b>👁 Detay</b> evdeyse pişirme yöntemi, dışarıdaysa gerçek restoran adayı gösterir.</span><span><b>↻ Değiştir</b> yeni alternatif bulur.</span><span><b>🔒 Sabitle</b> sonraki karıştırmalarda korur.</span></div>
         <div className="engine-day-grid">
           {plan.days.map((day) => {
             const caloriePct = Math.round(day.totalCalories / Math.max(1, plan.nutritionTargets.calories) * 100)
@@ -307,7 +310,12 @@ function MealRow({ meal, locked, onDetail, onSwap, onToggleLock }: MealRowProps)
   return (
     <div className={`engine-meal-row editable-meal-row ${locked ? 'is-locked' : ''}`}>
       <span className="meal-slot">{meal.slot}</span><div className="engine-meal-emoji">{meal.emoji}</div>
-      <div className="engine-meal-main"><div><strong>{meal.title}</strong><span className={`source-chip ${sourceClass(meal.source)}`}>{sourceEmoji(meal.source)} {meal.source}</span>{locked && <span className="meal-locked-chip">🔒 sabit</span>}</div><p>{meal.subtitle}</p><div className="meal-nutrition"><span>🔥 {meal.calories} kcal</span><span>💪 {meal.protein} g</span><span>💸 ≈ {money(meal.estimatedPrice)} ₺</span></div></div>
+      <div className="engine-meal-main">
+        <div><strong>{meal.title}</strong><span className={`source-chip ${sourceClass(meal.source)}`}>{sourceEmoji(meal.source)} {meal.source}</span>{locked && <span className="meal-locked-chip">🔒 sabit</span>}</div>
+        <p>{meal.subtitle}</p>
+        <div className="meal-nutrition"><span>🔥 {meal.calories} kcal</span><span>💪 {meal.protein} g</span><span>💸 ≈ {money(meal.estimatedPrice)} ₺</span></div>
+        <MealBusinessLine meal={meal} />
+      </div>
       <div className="meal-editor-side"><div className="meal-tags">{meal.tags.slice(0, 2).map((tag) => <span key={tag}>{tag}</span>)}</div><div className="meal-editor-actions"><button type="button" className="meal-detail-button" onClick={onDetail}>👁 Detay</button><button type="button" className="meal-swap-button" disabled={locked} onClick={onSwap}><span>↻</span> Değiştir</button><button type="button" className={`meal-lock-button ${locked ? 'active' : ''}`} onClick={onToggleLock}>{locked ? '🔒 Kilitli' : '🔓 Sabitle'}</button></div></div>
     </div>
   )
@@ -320,10 +328,11 @@ function ShoppingView({ groups, plan, onWeek }: ShoppingViewProps) {
     <section className="shopping-page-section shell">
       <div className="section-title-row shopping-title-row"><div><span className="eyebrow">🛒 Canlı güncellenen paket listesi</span><h2>Öğün değiştiyse sepet de değişti.</h2><p>İhtiyaç miktarını markette satılan paket boyuna yuvarlıyoruz. Bir tarifi değiştirdiğinde malzemeler burada anında yeniden hesaplanıyor.</p></div><button className="shopping-jump-button" type="button" onClick={onWeek}>← Haftaya dön</button></div>
       <div className="shopping-overview-grid"><article><span>🛍️ Toplam ürün</span><strong>{plan.shoppingList.length}</strong><small>farklı market kalemi</small></article><article><span>💸 Market tahmini</span><strong>{money(plan.marketCost)} ₺</strong><small>paket fiyatları üzerinden</small></article><article><span>♻️ Tekrar kullanılan</span><strong>{plan.reusedIngredientCount}</strong><small>birden fazla öğünde</small></article><article><span>✨ Paket avantajı</span><strong>≈ {money(plan.estimatedWasteSaving)} ₺</strong><small>tahmini</small></article></div>
+      <MarketShoppingBridge />
       <div className="shopping-groups">
         {groups.map((group) => <section className="shopping-group" key={group.category}><div className="shopping-group-heading"><h3>{group.category}</h3><span>{group.items.length} ürün</span></div><div className="shopping-item-list">{group.items.map((item) => <article className="shopping-item" key={item.ingredientId}><div className="shopping-item-emoji">{item.emoji}</div><div className="shopping-item-main"><strong>{item.name}</strong><small>İhtiyaç: {quantityText(item)}</small></div><div className="shopping-package"><span>{item.packages} × {item.packageLabel}</span><strong>{money(item.estimatedCost)} ₺</strong></div><div className={`reuse-badge ${item.usedInMeals >= 2 ? 'is-reused' : ''}`}>{item.usedInMeals >= 2 ? `♻️ ${item.usedInMeals} öğünde` : '1 öğünde'}</div></article>)}</div></section>)}
       </div>
-      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Şimdilik demo fiyat.</strong> Yakındaki gerçek işletmeleri artık yukarıdaki Nearby bölümünde görebilirsin. Sıradaki veri katmanında bu sepeti gerçek market ürün/fiyat verisiyle eşleştireceğiz.</p></div>
+      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>İşletme gerçek, fiyat henüz demo.</strong> Sepeti artık gerçek bir yakın markete bağlayabiliyoruz; ürün bazlı stok ve gerçek şube fiyatı sonraki veri entegrasyonunda gelecek.</p></div>
     </section>
   )
 }
