@@ -8,6 +8,7 @@ export type MealSource = 'Evde' | 'Sipariş' | 'Dışarı'
 export type MealSlot = 'Kahvaltı' | 'Öğle' | 'Ara öğün' | 'Akşam' | 'Gece öğünü'
 export type IngredientUnit = 'g' | 'ml' | 'adet'
 export type LocationSource = 'manual' | 'device'
+export type CookingEquipment = 'Ocak' | 'Fırın' | 'Airfryer' | 'Mikrodalga' | 'Tost makinesi' | 'Blender'
 
 export type PlannerState = {
   days: number
@@ -54,6 +55,7 @@ export type UserPlanProfile = {
   people: number
   stylePreset: MealStylePreset
   mealSplit: MealSplit
+  cookingEquipment: CookingEquipment[]
   city: string
   district: string
   neighborhood: string
