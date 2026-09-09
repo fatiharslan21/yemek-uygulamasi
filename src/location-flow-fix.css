@@ -1,0 +1,2 @@
+.location-step .use-location-button { display: none !important; }
+.location-step .step-description::after { content: ' Planın başında seçtiğin konum bu alanlara otomatik taşındı; istersen burada değiştirebilirsin.'; }
