@@ -1,6 +1,7 @@
 import { useMemo, type CSSProperties } from 'react'
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { MealBusinessLine } from './MealBusinessLine'
+import { MealPrepPanel } from './MealPrepPanel'
 import { formatPlanDate, greetingForNow, planDayIndex } from '../services/planCalendar'
 import type { MealActivityStatus } from '../services/planSessionStorage'
 import type { PlannedMeal, UserPlanProfile, WeeklyPlan } from '../types'
@@ -184,6 +185,8 @@ export function TodayView({
           <div><small>Dolaptan değer</small><h3>{reusedToday.length} malzeme bugün tekrar kullanılıyor.</h3><p>Lokma aynı paketi farklı öğünlerde değerlendirerek sepetin boşa gitmesini azaltmaya çalışıyor.</p>{reusedToday.length > 0 && <div className="today-chip-row">{reusedToday.map((item) => <span key={item.ingredientId}>{item.emoji} {item.name} × {item.usedInMeals}</span>)}</div>}</div>
         </article>
       </div>
+
+      <MealPrepPanel plan={plan} profile={profile} startIndex={activeIndex} />
 
       <div className="today-bottom-actions">
         <button type="button" onClick={onGoShopping}>🛒 Bugünün alışverişine bak</button>
