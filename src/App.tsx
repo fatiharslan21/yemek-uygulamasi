@@ -5,6 +5,7 @@ import { StarterPlanDashboard } from './components/StarterPlanDashboard'
 import type { UserPlanProfile } from './types'
 import './onboarding.css'
 import './location-ui.css'
+import './location-flow-fix.css'
 
 const initialProfile: UserPlanProfile = {
   name: '',
