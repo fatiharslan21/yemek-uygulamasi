@@ -25,9 +25,9 @@ const initialProfile: UserPlanProfile = {
   people: 1,
   stylePreset: 'Dengeli',
   mealSplit: { home: 60, delivery: 30, dineOut: 10 },
-  city: 'İstanbul',
-  district: 'Kadıköy',
-  neighborhood: 'Caddebostan',
+  city: '',
+  district: '',
+  neighborhood: '',
   locationSource: 'manual',
 }
 
