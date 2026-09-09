@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MenuApproval } from './components/MenuApproval'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PlanHistoryPanel } from './components/PlanHistoryPanel'
 import { PlanLocationGate } from './components/PlanLocationGate'
@@ -8,8 +9,9 @@ import { clearAppPreferences, loadAppPreferences } from './services/appPreferenc
 import { clearAppState, loadSavedAppState, saveAppState } from './services/appStorage'
 import { clearFavoriteRecipeIds } from './services/favoritesStorage'
 import { clearPlanHistory } from './services/planHistoryStorage'
-import { clearPlanSession } from './services/planSessionStorage'
-import type { UserPlanProfile } from './types'
+import { localDateKey } from './services/planCalendar'
+import { clearPlanSession, savePlanSession } from './services/planSessionStorage'
+import type { UserPlanProfile, WeeklyPlan } from './types'
 import './onboarding.css'
 import './location-ui.css'
 import './location-flow-fix.css'
@@ -40,7 +42,7 @@ const initialProfile: UserPlanProfile = {
   locationSource: 'manual',
 }
 
-type Screen = 'about' | 'location' | 'onboarding' | 'dashboard' | 'profile'
+type Screen = 'about' | 'location' | 'onboarding' | 'approval' | 'dashboard' | 'profile'
 
 function App() {
   const savedState = loadSavedAppState()
@@ -73,8 +75,14 @@ function App() {
 
   const completeOnboarding = (nextProfile: UserPlanProfile) => {
     setProfile(nextProfile)
+    setScreen('approval')
+    goTop()
+  }
+
+  const approveMenu = (approvedPlan: WeeklyPlan, seed: number) => {
+    saveAppState(profile)
+    savePlanSession(profile, approvedPlan, [], {}, seed, 10, 'today', localDateKey())
     setHasCompletedOnboarding(true)
-    saveAppState(nextProfile)
     setScreen('dashboard')
     goTop()
   }
@@ -115,6 +123,10 @@ function App() {
     return <OnboardingFlow initialProfile={profile} onComplete={completeOnboarding} onExit={returnFromFlow} />
   }
 
+  if (screen === 'approval') {
+    return <MenuApproval profile={profile} onApprove={approveMenu} onEdit={editPreferences} />
+  }
+
   if (screen === 'profile') {
     return <ProfileHub profile={profile} onBack={() => setScreen('dashboard')} onEditPreferences={editPreferences} onAbout={() => setScreen('about')} onResetAll={resetLocalApp} />
   }
@@ -138,10 +150,10 @@ function App() {
         <div className="hero-copy">
           <div className="hero-badge"><span>🌿</span> Mobil-first yemek planlama deneyimi</div>
           <h1>Bu hafta <span className="highlight">ne yiyeceğim?</span><br />derdini bitirelim.</h1>
-          <p>Evde yapacağın yemekleri, dışarıdan söyleyeceklerini, çevrendeki gerçek işletmeleri ve market alışverişini tek bir akıllı haftalık planda birleştir.</p>
+          <p>Evde yapacağın yemekleri, dışarıdan söyleyeceklerini, yakındaki restoranları ve market alışverişini tek bir haftalık planda birleştir.</p>
           <div className="hero-actions">
             <button className="hero-primary" type="button" onClick={() => hasCompletedOnboarding ? setScreen('dashboard') : startPlan()}>{hasCompletedOnboarding ? 'Planıma dön' : 'Planımı oluşturmaya başla'} <span>→</span></button>
-            <small>{hasCompletedOnboarding ? '💚 Profilin bu cihazda kayıtlı' : '⏱️ İlk kurulum yaklaşık 2 dakika'}</small>
+            <small>{hasCompletedOnboarding ? '💚 Planın bu cihazda kayıtlı' : '⏱️ İlk kurulum yaklaşık 2 dakika'}</small>
           </div>
           <div className="hero-points"><span>✅ Bütçe kontrollü</span><span>✅ Hedef odaklı</span><span>✅ Konuma göre</span></div>
         </div>
@@ -153,14 +165,14 @@ function App() {
         </div>
       </header>
 
-      <section className="home-demo-strip"><div className="shell demo-strip-inner"><div><span>Lokma şunu birleştiriyor</span><strong>🥗 Beslenme hedefi</strong></div><b>+</b><div><span>Haftalık sınırın</span><strong>💸 Yemek bütçesi</strong></div><b>+</b><div><span>Gerçek hayatın</span><strong>🏠 Ev + 🛵 Sipariş</strong></div><b>+</b><div><span>Çevrendeki seçenekler</span><strong>📍 Konum</strong></div></div></section>
+      <section className="home-demo-strip"><div className="shell demo-strip-inner"><div><span>Lokma şunu birleştiriyor</span><strong>🥗 Beslenme hedefi</strong></div><b>+</b><div><span>Haftalık sınırın</span><strong>💸 Yemek bütçesi</strong></div><b>+</b><div><span>Gerçek hayatın</span><strong>🏠 Ev + 🛵 Sipariş</strong></div><b>+</b><div><span>Çevrendeki seçenekler</span><strong>📍 Restoranlar</strong></div></div></section>
 
       <section className="how-section shell" id="nasil">
-        <div className="section-heading centered"><span className="eyebrow">📱 Uygulama gibi başlar</span><h2>İlk girişte doğrudan planını kurarsın.</h2><p>Uzun tanıtım sayfaları arasında dolaşmadan Lokma seni önce konum ve tercih akışına götürür. Sonraki gelişinde doğrudan planın açılır.</p></div>
+        <div className="section-heading centered"><span className="eyebrow">📱 Uygulama gibi başlar</span><h2>Önce tercihlerini ver, sonra menünü onayla.</h2><p>Konum ve tercihlerini seçtikten sonra haftalık menünün tamamını görürsün. Onay vermeden plan başlamaz.</p></div>
         <div className="steps-grid">
-          <article><span>1</span><div className="step-emoji">📍</div><h3>Çevreni seç</h3><p>Canlı konum veya il / ilçe / mahalle bilgisiyle planın nerede kullanılacağını söyle.</p></article>
+          <article><span>1</span><div className="step-emoji">📍</div><h3>Çevreni seç</h3><p>Canlı konum veya il / ilçe / mahalle bilgisiyle restoran önerilerinin kullanılacağı bölgeyi söyle.</p></article>
           <article><span>2</span><div className="step-emoji">🧍</div><h3>Tercihlerini ver</h3><p>Hedef, beslenme biçimi, bütçe, mutfak ekipmanı ve öğün düzenini seç.</p></article>
-          <article><span>3</span><div className="step-emoji">✨</div><h3>Planın hazır</h3><p>Ev yemeği, gerçek çevre işletmeleri ve alışveriş sepeti tek deneyimde birleşsin.</p></article>
+          <article><span>3</span><div className="step-emoji">🍽️</div><h3>Menünü onayla</h3><p>Tüm haftayı gör, istersen yeniden oluştur; beğendiğin menüyü onaylayınca plan başlasın.</p></article>
         </div>
       </section>
 
@@ -177,7 +189,7 @@ function App() {
         </section>
       )}
 
-      <footer className="footer shell"><div className="brand"><span className="brand-mark">🍋</span><span>lokma</span></div><p>Türkiye’den başlayan akıllı yemek planlama deneyimi.</p><span>Local prototype • mobile-first</span></footer>
+      <footer className="footer shell"><div className="brand"><span className="brand-mark">🍋</span><span>lokma</span></div><p>Türkiye’den başlayan kişisel yemek planlama deneyimi.</p><span>Bütçe • menü • alışveriş • restoran</span></footer>
     </main>
   )
 }
