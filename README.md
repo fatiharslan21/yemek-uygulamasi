@@ -22,7 +22,7 @@ Lokma artık landing-first bir web sitesi gibi davranmaz.
 - **İlk kez giren kullanıcı** doğrudan konum → profil → plan oluşturma akışına gider.
 - İlk onboarding tamamlandığında profil bu cihazda localStorage ile saklanır.
 - **Geri gelen kullanıcı** doğrudan mevcut plan deneyimine gider.
-- Dashboard'un ana sekmesi artık **☀️ Bugün** ekranıdır.
+- Dashboard'un ana sekmesi **☀️ Bugün** ekranıdır.
 - Aynı gün içinde kullanıcı son açık sekmesine dönebilir; yeni gün başladığında uygulama otomatik olarak Bugün ekranına döner.
 - Haftalık plan, öğün değişiklikleri, kilitli öğünler, `Yedim / Atladım` durumları, plan tarihi ve açık sekme plan oturumu olarak saklanır.
 - Profil değişirse eski plan oturumu fingerprint uyuşmadığı için otomatik kullanılmaz; yeni tercihlerle yeni plan oluşturulur.
@@ -45,6 +45,15 @@ Lokma'nın günlük kullanım merkezi:
 - bugün tekrar kullanılan alışveriş malzemelerini gösterir
 - plan süresi bittiğinde mevcut tercihleri koruyarak bugünden yeni plan başlatabilir
 
+## 🛒 Alışveriş deneyimi
+
+- paket boyuna göre haftalık alışveriş listesi
+- `Evde var` ve `Aldım` checklist aksiyonları
+- checklist durumu aynı sepet için cihazda kalıcıdır
+- `Evde var` veya `Aldım` işaretlenen kalemler kalan sepetten çıkarılır
+- Fiyat İstihbaratı yalnızca gerçekten kalan ürünleri karşılaştırır
+- kalan katalog maliyeti ve tamamlanma yüzdesi anlık güncellenir
+
 ## ✅ Şu anda çalışan ürün parçaları
 
 - plan başlamadan önce canlı konum veya İl / İlçe / Mahalle seçimi
@@ -62,10 +71,8 @@ Lokma'nın günlük kullanım merkezi:
 - planı gerçek başlangıç tarihine bağlayan takvim katmanı
 - haftalık görünümde gerçek tarih başlıkları ve `Bugün / Geçmiş / Planlı` durumları
 - kalori / protein hedefleri
-- paket boyuna göre alışveriş listesi
 - malzeme yeniden kullanım / israf azaltma mantığı
-- öğün değiştirme
-- öğün kilitleme
+- öğün değiştirme ve kilitleme
 - kilitli öğünleri koruyarak haftayı yeniden karıştırma
 - günlük öğün durumu takibi (`Yedim / Atladım`)
 - planlar arasında kalıcı tarif favorileri
@@ -74,24 +81,11 @@ Lokma'nın günlük kullanım merkezi:
 - **Nearby v0.3:** OpenStreetMap / Overpass ile çevredeki gerçek market ve restoran isimleri, türleri ve kuş uçuşu mesafeleri
 - OSM kaydında varsa açılış saati, web sitesi, telefon, paket servis / gel-al etiketleri
 - gerçek yakındaki restoranları sipariş / dışarı öğünlerine bağlama
-- seçilen restoranı haftalık öğün kartında gösterme
 - gerçek yakındaki marketlerden birini alışveriş sepeti marketi olarak seçme
-- **Fiyat İstihbaratı v0.1:** yakın gerçek marketler üzerinde açıkça etiketlenmiş fiyat simülasyonu
+- **Fiyat İstihbaratı v0.2:** kalan sepeti yakın gerçek marketler üzerinde açıkça etiketlenmiş fiyat simülasyonuyla karşılaştırma
 - simülasyon üzerinden “en ucuz tek market” karşılaştırması
 - en fazla 2 markete bölünmüş sepet optimizasyonu
 - market seçimini en çok etkileyen fiyat oynaklığı yüksek ürünleri gösterme
-
-## 🧠 Plan motorunun mevcut girdileri
-
-- beslenme tipi
-- alerjen / hassasiyet
-- sevmediği ürünler
-- hedef kalori / protein
-- haftalık bütçe
-- kişi sayısı
-- ev / sipariş / dışarı oranı
-- mevcut mutfak ekipmanı
-- malzeme yeniden kullanımı
 
 ## 📍 Konum ve işletme verisi
 
@@ -108,13 +102,11 @@ OpenStreetMap kayıtları eksik veya güncel olmayabilir. İşletme meta bilgile
 
 Lokma fiyatın kaynağını veri modelinde ayırır. Böylece simülasyon fiyatı yanlışlıkla canlı fiyatmış gibi gösterilmez.
 
-Şu an üç veri sınıfı hedefleniyor:
-
 - `simulated`: geliştirme / optimizasyon senaryosu
 - `manual`: kullanıcı veya operasyon tarafından doğrulanmış manuel fiyat girişi
 - `live`: gerçek market / menü fiyat sağlayıcısından gelen veri
 
-**Fiyat İstihbaratı v0.1** şu anda `simulated` çalışır. Market adı ve mesafesi gerçek Nearby verisidir; ürün fiyatı değildir.
+**Fiyat İstihbaratı v0.2** şu anda `simulated` çalışır. Market adı ve mesafesi gerçek Nearby verisidir; ürün fiyatı değildir.
 
 ## 🧪 Şimdilik demo / simülasyon kalan veri
 
@@ -126,14 +118,13 @@ Lokma fiyatın kaynağını veri modelinde ayırır. Böylece simülasyon fiyat�
 
 ## 🗺️ Sıradaki büyük geliştirmeler
 
-1. alışveriş listesine `Evde var / Aldım` checklist ve dolap durumu
-2. favorilerin yeni plan seçimlerine kontrollü biçimde ağırlık vermesi
-3. gerçek market ürün sağlayıcısı / fiyat normalizasyon adaptörleri
-4. gerçek restoran menü / ürün eşleştirme katmanı
-5. kullanıcı doğrulamalı manuel fiyat girişi ve fiyat geçmişi
-6. çoklu market optimizasyonuna yürüyüş/sürüş zamanı ve yol maliyeti ekleme
-7. batch cooking / meal-prep zamanı ve haftalık mutfak takvimi
-8. geçmiş planlar ve kullanıcı geri bildiriminden öğrenme
+1. favorilerin yeni plan seçimlerine kontrollü biçimde ağırlık vermesi
+2. gerçek market ürün sağlayıcısı / fiyat normalizasyon adaptörleri
+3. gerçek restoran menü / ürün eşleştirme katmanı
+4. kullanıcı doğrulamalı manuel fiyat girişi ve fiyat geçmişi
+5. çoklu market optimizasyonuna yürüyüş/sürüş zamanı ve yol maliyeti ekleme
+6. batch cooking / meal-prep zamanı ve haftalık mutfak takvimi
+7. geçmiş planlar ve kullanıcı geri bildiriminden öğrenme
 
 ## 🎨 Tasarım ilkeleri
 
