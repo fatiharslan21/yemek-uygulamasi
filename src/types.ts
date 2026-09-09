@@ -7,6 +7,7 @@ export type MealStylePreset = 'Ekonomik' | 'Dengeli' | 'Rahat'
 export type MealSource = 'Evde' | 'Sipariş' | 'Dışarı'
 export type MealSlot = 'Kahvaltı' | 'Öğle' | 'Ara öğün' | 'Akşam' | 'Gece öğünü'
 export type IngredientUnit = 'g' | 'ml' | 'adet'
+export type LocationSource = 'manual' | 'device'
 
 export type PlannerState = {
   days: number
@@ -56,6 +57,10 @@ export type UserPlanProfile = {
   city: string
   district: string
   neighborhood: string
+  latitude?: number
+  longitude?: number
+  locationAccuracy?: number
+  locationSource?: LocationSource
 }
 
 export type IngredientUse = {
