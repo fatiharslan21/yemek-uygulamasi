@@ -55,9 +55,19 @@ function App() {
       const preferences = loadAppPreferences()
       document.body.classList.toggle('lokma-reduced-motion', preferences.reducedMotion)
     }
+    const requestRenewalApproval = (event: Event) => {
+      event.preventDefault()
+      setScreen('approval')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
     applyPreferences()
     window.addEventListener('lokma:preferences-changed', applyPreferences)
-    return () => window.removeEventListener('lokma:preferences-changed', applyPreferences)
+    window.addEventListener('lokma:renew-plan', requestRenewalApproval)
+    return () => {
+      window.removeEventListener('lokma:preferences-changed', applyPreferences)
+      window.removeEventListener('lokma:renew-plan', requestRenewalApproval)
+    }
   }, [])
 
   const goTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
