@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { RECIPE_CATALOG } from '../data/recipeCatalog'
+import { CloudAccountPanel } from './CloudAccountPanel'
+import { LegalCenter } from './LegalCenter'
 import { PlanHistoryPanel } from './PlanHistoryPanel'
 import { WeightTracker } from './WeightTracker'
 import { loadAppPreferences, saveAppPreferences, type AppPreferences } from '../services/appPreferences'
@@ -62,6 +64,7 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
         <article><span>⚖️ Plan kilosu</span><strong>{profile.weight} kg</strong><small>hedef hesabında kullanılıyor</small></article>
       </section>
 
+      <CloudAccountPanel />
       <WeightTracker startingWeight={profile.weight} />
 
       <section className="profile-section shell">
@@ -80,9 +83,10 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
       </section>
 
       <PlanHistoryPanel />
+      <LegalCenter />
 
       <section className="profile-section shell profile-data-card">
-        <div><span>🔐</span><div><strong>Planın uygulamayı kapatsan da bu cihazda açık kalır</strong><p>Profil, aktif plan, günlük işaretler, favoriler, kilo kayıtları ve geçmiş planlar cihazda saklanır. Uygulamayı silmek veya uygulama verilerini temizlemek bu yerel kayıtları silebilir. Hesapla cihazlar arası senkronizasyon yayın fazında eklenecek.</p></div></div>
+        <div><span>🔐</span><div><strong>Planın uygulamayı kapatsan da bu cihazda açık kalır</strong><p>Profil, aktif plan, günlük işaretler, favoriler, kilo kayıtları ve geçmiş planlar cihazda saklanır. Uygulamayı silmek veya uygulama verilerini temizlemek bu yerel kayıtları silebilir. Hesap bağlantısı etkinleştirildiğinde bu verileri isteğe bağlı olarak buluta yedekleyebilirsin.</p></div></div>
         <button type="button" onClick={onResetAll}>Tüm yerel veriyi sıfırla</button>
       </section>
     </main>
