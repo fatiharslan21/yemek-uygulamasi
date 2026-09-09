@@ -1,19 +1,19 @@
-# 🍋 Lokma — Akıllı Yemek Planlayıcı
+# 🍋 Lokma — Kişisel Yemek Planlayıcı
 
 Lokma; bütçe, beslenme tercihi, hedef, konum, mutfak ekipmanı ve günlük hayatı tek bir mobil-first yemek planında birleştiren Türkiye-first uygulama.
 
-> Şu aşamada ürün **local review** içindir. Netlify/Vercel/GitHub Pages deploy'u, App Store veya Google Play paketi yoktur. Önce ürün deneyimi tamamlanır ve incelenir; yayın fazı daha sonra başlatılır.
+> Ürün hâlâ **local review** modundadır. Deploy yoktur. App Store / Google Play yayınlama, signing ve canlı reklamlar daha sonra yapılacaktır.
 
 ## ▶️ Localde çalıştırma
 
-Node.js 18+ gerekir.
+Node.js 22 önerilir.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Günlük kullanımda kod güncellendikten sonra çoğunlukla:
+Bağımlılık değişmediyse sonraki güncellemelerde çoğunlukla:
 
 ```bash
 git pull
@@ -22,16 +22,15 @@ npm run dev
 
 yeterlidir.
 
-## 📱 Ürün davranışı
+## 📱 Ana kullanıcı akışı
 
-- İlk kullanıcı landing'e düşmez; doğrudan **Konum → Profil/Tercihler → Plan** akışına girer.
+- İlk kullanıcı landing'e düşmez; doğrudan **Konum → Profil/Tercihler → Menü Önizleme** akışına girer.
+- Plan, kullanıcı haftalık menünün tamamını görüp **onay vermeden başlamaz**.
+- Menü önizlemede `Tercihleri düzenle / Başka menü oluştur / Bu menüyü onayla` aksiyonları vardır.
 - Geri gelen kullanıcı doğrudan mevcut planına döner.
 - Ana kullanım yüzeyi **☀️ Bugün** ekranıdır.
 - Mobil alt navigasyon: **Bugün / Hafta / Liste / Profil**.
-- Plan ve günlük davranışlar cihazda otomatik saklanır.
-- Yeni gün başladığında uygulama günlük kullanımı öne almak için tekrar Bugün'e döner.
-- Plan döngüsü tamamlandığında mevcut tercihleri koruyarak yeni plan başlatılabilir.
-- Beklenmeyen UI hatalarında uygulama seviyesinde kurtarma ekranı vardır.
+- Plan döngüsü tamamlanınca yeni hafta da yine menü onayından geçer.
 
 ## ☀️ Bugün
 
@@ -42,7 +41,7 @@ yeterlidir.
 - tahmini öğün harcaması
 - kalıcı tarif favorileri
 - bugün/yarın ortak malzeme sinyali
-- 3 günlük **Meal Prep** görevleri: ortak malzeme, toplam miktar, yaklaşık hazırlık süresi ve uygun ekipman
+- 3 günlük Meal Prep görevleri
 
 ## 🧠 Plan motoru
 
@@ -52,11 +51,14 @@ yeterlidir.
 - kişi sayısı
 - hepçil / vejetaryen / vegan / pesketaryen
 - alerji/hassasiyet ve sevmediği ürün filtreleri
+- Deniz ürünü ↔ balık ve Soya ↔ tofu gibi ek katalog güvenlik eşlemeleri
 - ev / sipariş / dışarı dağılımı
 - Ocak / Fırın / Airfryer / Mikrodalga / Tost makinesi / Blender uyumluluğu
 - malzeme yeniden kullanımı ve tekrar cezası
-- bütçe gerektiğinde pahalı dışarı öğünlerini daha uygun ev seçenekleriyle dengeleme
+- bütçe gerektiğinde pahalı dışarı öğünlerini ev seçenekleriyle dengeleme
 - favorileri kontrollü biçimde yeni planlara taşıyan kişiselleştirme katmanı
+
+> Alerji filtresi yardımcı bir ürün özelliğidir; ürün etiketi, restoran beyanı ve çapraz bulaşma kontrolünün yerine geçmez.
 
 ## 🍳 Tarif ve düzenleme
 
@@ -64,102 +66,130 @@ yeterlidir.
 - öğün kilitleme
 - kilitli öğünleri koruyarak haftayı yeniden karıştırma
 - kişi sayısına göre malzeme miktarı
-- “Lokma bunu neden seçti?” açıklaması
+- öneri gerekçesi
 - aynı ev yemeği için uygun olduğunda farklı pişirme senaryoları
 - Ocak / Fırın / Airfryer vb. ekipman kontrolü
 
 ## 🛒 Dolap + alışveriş
 
 - haftanın tamamından üretilen paket bazlı alışveriş listesi
-- her kalem için **evdeki miktarı** girme
-- örneğin ihtiyaç 900 g, dolapta 600 g ise net 300 g ihtiyacı yeniden hesaplama
+- her kalem için evdeki miktarı girme
+- net eksik miktarı yeniden hesaplama
 - `Tamamı evde` ve `Aldım` aksiyonları
-- kalan miktarı market paket boyuna tekrar yuvarlama
-- checklist ve stok durumu localStorage'da saklama
-- Fiyat İstihbaratı yalnızca net kalan sepet üzerinde çalışır
+- kalan miktarı paket boyuna tekrar yuvarlama
+- checklist ve stok durumunu cihazda saklama
 
-## 📍 Gerçek çevre
+### Market fiyat rehberi
 
-Anahtar gerektirmeyen açık veri kaynaklarıyla:
+Yakındaki market taraması kullanıcı yüzünden kaldırıldı. Bunun yerine sabit referans zincirleri gösterilir:
 
-- Browser Geolocation: gerçek cihaz koordinatı
+- BİM
+- A101
+- ŞOK
+- Migros
+- CarrefourSA
+
+Lokma bu zincirler için **tahmini fiyat aralığı** üretir. Bunlar canlı mağaza fiyatı veya stok garantisi değildir; bütçe planlama bandıdır.
+
+## 📍 Restoran keşfi
+
+Konum sadece restoran keşfinde kullanılır:
+
+- Browser Geolocation
 - Nominatim: koordinat ↔ İl / İlçe / Mahalle çözümleme
-- OpenStreetMap / Overpass: yakındaki gerçek market ve restoran keşfi
-- gerçek işletme adı, türü ve kuş uçuşu mesafe
-- OSM kaydında varsa açılış saati, web sitesi, telefon, paket servis/gel-al bilgisi
-- dışarı/sipariş öğününe gerçek restoran bağlama
-- alışveriş sepetine gerçek yakın market seçme
+- OpenStreetMap / Overpass: yakındaki gerçek restoran keşfi
+- işletme adı, türü ve kuş uçuşu mesafe
+- kayıtta varsa açılış saati, web sitesi, telefon, paket servis/gel-al bilgisi
+- dışarı/sipariş öğününe restoran bağlama
 
-OpenStreetMap kayıtları eksik veya eski olabilir; bu yüzden işletme metadatası kesin gerçek-zaman bilgisi gibi sunulmaz.
+OpenStreetMap kayıtları eksik veya eski olabilir; işletme metadatası gerçek-zaman garantisi olarak sunulmaz.
 
-## 💸 Fiyat İstihbaratı
+## ⚖️ Kilo takibi
 
-Fiyat kaynağı modelde açıkça ayrıdır:
+- tarih + kilo kaydı
+- ilk / son kayıt
+- toplam değişim
+- küçük trend grafiği
+- son tartımlar
+- kilo kayıtları mevcut haftalık planı otomatik değiştirmez
+- plan kilosu değiştirildiğinde yeni menü yeniden görülür ve onaylanır
 
-- `simulated`: geliştirme / optimizasyon senaryosu
-- `manual`: doğrulanmış manuel fiyat girişi için ayrılmış sınıf
-- `live`: gerçek sağlayıcı için ayrılmış sınıf
+## ☁️ Hesap ve bulut yedek
 
-Şu an market isimleri ve mesafeler gerçektir; ürün fiyatları **simülasyondur**.
+Lokma **local-first** çalışır; hesap zorunlu değildir.
 
-Çalışan optimizasyon:
+Supabase adaptörü hazırdır. Ortam değişkenleri yoksa uygulama local modda çalışmaya devam eder. Supabase bağlandığında Profil ekranında:
 
-- net kalan sepet için tek-market karşılaştırması
-- en fazla 2 markete bölünmüş sepet senaryosu
-- market seçimini en çok etkileyen fiyat farkı yüksek ürünler
-- seçilen gerçek marketi sepetle ilişkilendirme
+- e-posta + şifre hesap açma
+- giriş / çıkış
+- `Bu cihazı buluta yedekle`
+- `Buluttaki yedeği getir`
+- hesapsız JSON yedeği indirme
+
+aktif olur.
+
+Kesin `latitude`, `longitude` ve `locationAccuracy` bilgileri bulut yedeğine dahil edilmez.
+
+Kurulum: `docs/CLOUD_SETUP.md`
+
+## 🛡️ Gizlilik ve reklam politikası
+
+Profil içinde okunabilir Gizlilik & Koşullar özeti vardır.
+
+Reklamlar şu anda tamamen kapalıdır. Kod seviyesinde ürün kuralı:
+
+- ilk 3 gün reklam yok
+- onboarding'de reklam yok
+- menü onayında reklam yok
+- tarif adımlarında reklam yok
+- kilo takibinde reklam yok
+- ileride açılırsa yalnızca Hafta / Alışveriş yüzeyinde en fazla 1 doğal sponsor kartı hedeflenir
+
+## 📲 iOS / Android hazırlığı
+
+Capacitor 8 tabanlı native shell hazırlığı repoya eklenmiştir.
+
+```bash
+npm run mobile:add:android
+npm run mobile:add:ios
+npm run mobile:sync
+```
+
+Platform oluşturma ve store signing henüz yapılmaz. Ayrıntı: `docs/MOBILE_SETUP.md`.
 
 ## 👤 Profil ve öğrenme
 
 - mobil Profil Merkezi
-- hedef / bütçe / konum / mutfak özeti
+- hedef / bütçe / konum özeti
+- hesap ve yedek kartı
+- kilo takibi
 - favori tarifleri görme ve silme
-- “favorileri yeni plana kat” ayarı
-- hareketleri azalt / erişilebilirlik tercihi
+- favorileri yeni plana kat ayarı
+- hareketleri azalt tercihi
 - geçmiş planları otomatik arşivleme
-- geçmiş planda takip yüzdesi, bütçe, ortalama kalori/protein ve yemek özeti
+- gizlilik & koşullar merkezi
 - yerel verileri tamamen sıfırlama
-
-## 🧪 Bilerek launch fazına bırakılanlar
-
-Bunlar local ürün deneyiminin kırık olduğu anlamına gelmez; dış servis, mağaza veya operasyon kararı gerektiren yayın işleri olarak ayrılmıştır:
-
-- gerçek market ürün/stok/fiyat sağlayıcıları
-- gerçek restoran menü ve menü fiyatları
-- rota API'siyle yürüyüş/sürüş süresi
-- kullanıcı hesabı ve bulut senkronizasyonu
-- push notification altyapısı
-- analytics / crash reporting sağlayıcısı
-- App Store / Google Play native paketleme ve mağaza varlıkları
-- privacy/terms/consent metinleri
-- reklam SDK'sı / premium modeli
-
-## 💰 Monetizasyon hazırlığı
-
-Kod tabanında reklam/premium sözleşmesi ayrılmıştır ancak **reklamlar tamamen kapalıdır**. İlk kullanım, konum izni, alerji/hassasiyet ve tarif pişirme adımları reklam dışı yüzeyler olarak tanımlanmıştır. Gerçek reklam modeli ürün incelemesinden sonra birlikte kararlaştırılacaktır.
 
 ## ✅ Kalite
 
-`.github/workflows/ci.yml` yalnızca doğrulama yapar; deploy etmez.
-
-Her push'ta:
+`.github/workflows/ci.yml` deploy etmez; her push'ta:
 
 ```bash
 npm install
 npm run build
 ```
 
-çalıştırılarak TypeScript + Vite build kontrol edilir. Hata halinde kısa süreli build log artifact'i üretilir.
+ile TypeScript + Vite doğrulaması yapar ve başarılıysa kısa süreli review `dist` artifact'i üretir.
 
 ## 🎨 Tasarım ilkeleri
 
 - mobile-first, tek elle kullanılabilir
 - ilk girişte doğrudan temel işe götürme
-- günlük kullanım için Bugün yüzeyi
+- kullanıcı onayı olmadan planı başlatmama
 - warm/off-white + yeşil Lokma dili
 - safe-area uyumu
-- açıklanabilir öneriler
 - bütçeyi görünür tutma
-- gerçek veri ile demo/simülasyonu asla karıştırmama
-- mutfak ekipmanı ve çevreyi gerçek ürün girdisi kabul etme
+- tahmini veri ile gerçek veriyi karıştırmama
+- kesin konumu gereksiz yere buluta taşımama
+- hesabı zorunlu tutmama
 - reklamı kullanıcı deneyiminin önüne koymama
