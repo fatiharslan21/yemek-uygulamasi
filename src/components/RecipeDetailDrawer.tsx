@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
+import { useNearbyData } from '../context/NearbyDataContext'
 import { getCookingGuides, guideIsAvailable } from '../services/cookingGuides'
+import { rankRestaurantsForMeal } from '../services/businessMatcher'
 import type { PlannedMeal, Recipe, UserPlanProfile, WeeklyPlan } from '../types'
 import '../recipe-detail.css'
 import '../kitchen.css'
+import '../business-link.css'
 
 type RecipeDetailDrawerProps = {
   meal: PlannedMeal
@@ -19,6 +22,11 @@ function quantityText(quantity: number, unit: 'g' | 'ml' | 'adet') {
   if (unit === 'g' && quantity >= 1000) return `${(quantity / 1000).toFixed(1).replace('.', ',')} kg`
   if (unit === 'ml' && quantity >= 1000) return `${(quantity / 1000).toFixed(1).replace('.', ',')} L`
   return `${Math.round(quantity)} ${unit}`
+}
+
+function distanceText(meters: number) {
+  if (meters < 1000) return `${meters} m`
+  return `${(meters / 1000).toFixed(1).replace('.', ',')} km`
 }
 
 function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile: UserPlanProfile, plan: WeeklyPlan) {
@@ -55,17 +63,13 @@ function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile:
   return reasons.slice(0, 5)
 }
 
-function outsidePreparationSteps() {
-  return [
-    'Nearby katmanı bu öğün için çevrendeki uygun restoranları gerçek konum verisiyle eşleştirmeye başlayacak.',
-    'İşletme seçildiğinde ileride fiyat, mesafe ve destekleniyorsa menü besin bilgisi bu öğüne geri yazılacak.',
-  ]
-}
-
 export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwap, onToggleLock }: RecipeDetailDrawerProps) {
+  const { places, restaurantAssignments, assignRestaurant } = useNearbyData()
   const recipe = RECIPE_CATALOG.find((item) => item.id === meal.recipeId)
   const whyReasons = buildWhyReasons(meal, recipe, profile, plan)
   const cookingGuides = useMemo(() => getCookingGuides(recipe, meal, profile.people), [recipe, meal, profile.people])
+  const restaurantCandidates = useMemo(() => rankRestaurantsForMeal(places, meal).slice(0, 6), [places, meal])
+  const assignedRestaurant = restaurantAssignments[meal.id]
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null)
   const selectedGuide = cookingGuides.find((item) => item.id === selectedGuideId)
     ?? cookingGuides.find((item) => guideIsAvailable(item, profile.cookingEquipment))
@@ -86,7 +90,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
           <div><span>🔥 Kalori</span><strong>{meal.calories} kcal</strong></div>
           <div><span>💪 Protein</span><strong>{meal.protein} g</strong></div>
           <div><span>💸 Tahmin</span><strong>≈ {Math.round(meal.estimatedPrice).toLocaleString('tr-TR')} ₺</strong></div>
-          <div><span>⏱️ Süre</span><strong>{meal.source === 'Evde' ? (selectedGuide ? `≈ ${selectedGuide.minutes} dk` : 'Tarife göre') : 'Sipariş'}</strong></div>
+          <div><span>⏱️ Süre</span><strong>{meal.source === 'Evde' ? (selectedGuide ? `≈ ${selectedGuide.minutes} dk` : 'Tarife göre') : assignedRestaurant ? distanceText(assignedRestaurant.distanceMeters) : 'İşletme seç'}</strong></div>
         </div>
 
         <section className="recipe-detail-section">
@@ -106,7 +110,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
                 )
               })}
             </div>
-          ) : <div className="recipe-empty-note">Bu dışarı öğününün gerçek içerik ve porsiyon bilgisi restoran veri katmanı bağlandığında gelecek.</div>}
+          ) : <div className="recipe-empty-note">Bu dışarı öğününün gerçek içerik ve porsiyon bilgisi menü veri katmanı bağlandığında gelecek.</div>}
           {recipe?.allergens.length ? <div className="recipe-allergen-note">⚠️ Katalog alerjen etiketi: {recipe.allergens.join(', ')}</div> : null}
         </section>
 
@@ -146,9 +150,38 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
             )}
           </section>
         ) : (
-          <section className="recipe-detail-section">
-            <div className="recipe-section-title"><span>📍</span><div><h3>İşletme bağlantısı</h3><p>Nearby v0.1 gerçek çevre verisini dashboard'a getiriyor</p></div></div>
-            <ol className="recipe-step-list">{outsidePreparationSteps().map((step) => <li key={step}>{step}</li>)}</ol>
+          <section className="recipe-detail-section restaurant-match-section">
+            <div className="recipe-section-title"><span>📍</span><div><h3>Bu öğünü nereden alalım?</h3><p>Nearby taramasındaki gerçek restoranları öğün türü + mutfak etiketi + mesafeye göre sıralıyoruz</p></div></div>
+
+            {assignedRestaurant && (
+              <div className="assigned-restaurant-card">
+                <span>✓</span>
+                <div><strong>{assignedRestaurant.name}</strong><p>{assignedRestaurant.subtype} • {distanceText(assignedRestaurant.distanceMeters)}{assignedRestaurant.cuisine ? ` • ${assignedRestaurant.cuisine.split(';').join(', ')}` : ''}</p></div>
+                <button type="button" onClick={() => assignRestaurant(meal.id, undefined)}>Değiştir</button>
+              </div>
+            )}
+
+            {restaurantCandidates.length > 0 ? (
+              <div className="restaurant-candidate-list">
+                {restaurantCandidates.map((place, index) => {
+                  const selected = assignedRestaurant?.id === place.id
+                  return (
+                    <button key={place.id} type="button" className={`restaurant-candidate ${selected ? 'selected' : ''}`} onClick={() => assignRestaurant(meal.id, selected ? undefined : place)}>
+                      <span className="restaurant-rank">{index + 1}</span>
+                      <div><strong>{place.name}</strong><p>{place.subtype}{place.cuisine ? ` • ${place.cuisine.split(';').join(', ')}` : ''}</p></div>
+                      <b>📏 {distanceText(place.distanceMeters)}</b>
+                      <em>{selected ? '✓ Seçildi' : 'Bu öğüne bağla'}</em>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="restaurant-empty-state">
+                <span>📡</span><div><strong>Henüz restoran verisi yok.</strong><p>Dashboard’daki “Çevremi tara” butonunu çalıştır; bulunan gerçek restoranlar burada otomatik aday olacak.</p></div>
+              </div>
+            )}
+
+            <div className="restaurant-data-note">ℹ️ İşletme ve mesafe gerçek çevre verisinden geliyor. Bu aşamada seçtiğin restoranın gerçek menü fiyatı bilinmediği için öğünün bütçe tutarı hâlâ Lokma demo tahminidir.</div>
           </section>
         )}
 
