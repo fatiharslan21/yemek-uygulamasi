@@ -106,6 +106,12 @@ export function TodayView({
     return plan.shoppingList.filter((item) => ids.has(item.ingredientId) && item.usedInMeals >= 2).slice(0, 5)
   }, [day, plan.shoppingList])
 
+  const requestFreshPlan = () => {
+    const event = new Event('lokma:renew-plan', { cancelable: true })
+    const useLegacyFallback = window.dispatchEvent(event)
+    if (useLegacyFallback) onFreshPlan()
+  }
+
   if (planExpired) {
     return (
       <section className="today-page shell">
@@ -113,8 +119,8 @@ export function TodayView({
           <div className="today-expired-emoji">🌱</div>
           <span className="eyebrow">Plan döngüsü tamamlandı</span>
           <h1>{profile.name ? `${profile.name}, ` : ''}bu planın {plan.days.length} günü bitti.</h1>
-          <p>Yeni planı bugünden başlatıp mevcut tercihlerini koruyabiliriz. Konumun, bütçen ve mutfak ekipmanların yeniden girilmez.</p>
-          <button type="button" onClick={onFreshPlan}>✨ Bugünden yeni plan oluştur</button>
+          <p>Eski haftanı geçmişe kaydedip mevcut tercihlerinle yeni bir menü hazırlayacağız. Yeni hafta, sen menüyü görüp onayladıktan sonra başlayacak.</p>
+          <button type="button" onClick={requestFreshPlan}>🍽️ Yeni haftanın menüsünü gör</button>
         </div>
       </section>
     )
