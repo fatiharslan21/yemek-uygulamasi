@@ -1,143 +1,165 @@
 # 🍋 Lokma — Akıllı Yemek Planlayıcı
 
-Türkiye'den başlayıp daha sonra Avrupa ve ABD'ye açılması planlanan; bütçe, beslenme tipi, hedef, konum, mutfak ekipmanı ve gün sayısı üzerinden haftalık yemek planı oluşturan mobil-first uygulama.
+Lokma; bütçe, beslenme tercihi, hedef, konum, mutfak ekipmanı ve günlük hayatı tek bir mobil-first yemek planında birleştiren Türkiye-first uygulama.
 
-> Bu repo şu aşamada yalnızca **local development** içindir. Netlify, Vercel veya başka bir publish/deploy ayarı yoktur.
+> Şu aşamada ürün **local review** içindir. Netlify/Vercel/GitHub Pages deploy'u, App Store veya Google Play paketi yoktur. Önce ürün deneyimi tamamlanır ve incelenir; yayın fazı daha sonra başlatılır.
 
 ## ▶️ Localde çalıştırma
 
-Gereksinim: Node.js 18+.
+Node.js 18+ gerekir.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Tarayıcıda Vite'ın verdiği local adresi aç. Varsayılan adres genellikle `http://localhost:5173` olur.
+Günlük kullanımda kod güncellendikten sonra çoğunlukla:
 
-## 📱 Uygulama davranışı
+```bash
+git pull
+npm run dev
+```
 
-Lokma artık landing-first bir web sitesi gibi davranmaz.
+yeterlidir.
 
-- **İlk kez giren kullanıcı** doğrudan konum → profil → plan oluşturma akışına gider.
-- İlk onboarding tamamlandığında profil bu cihazda localStorage ile saklanır.
-- **Geri gelen kullanıcı** doğrudan mevcut plan deneyimine gider.
-- Dashboard'un ana sekmesi **☀️ Bugün** ekranıdır.
-- Aynı gün içinde kullanıcı son açık sekmesine dönebilir; yeni gün başladığında uygulama otomatik olarak Bugün ekranına döner.
-- Haftalık plan, öğün değişiklikleri, kilitli öğünler, `Yedim / Atladım` durumları, plan tarihi ve açık sekme plan oturumu olarak saklanır.
-- Profil değişirse eski plan oturumu fingerprint uyuşmadığı için otomatik kullanılmaz; yeni tercihlerle yeni plan oluşturulur.
-- Tanıtım/“Lokma hakkında” ekranı ikincil ekrandır; ürünün ana giriş kapısı değildir.
-- Mobil dashboard alt navigasyonu **Bugün / Hafta / Liste / Profil** şeklindedir.
-- iOS/Android safe-area ve mobil web-app meta ayarları bulunur.
+## 📱 Ürün davranışı
 
-## ☀️ Bugün ekranı
+- İlk kullanıcı landing'e düşmez; doğrudan **Konum → Profil/Tercihler → Plan** akışına girer.
+- Geri gelen kullanıcı doğrudan mevcut planına döner.
+- Ana kullanım yüzeyi **☀️ Bugün** ekranıdır.
+- Mobil alt navigasyon: **Bugün / Hafta / Liste / Profil**.
+- Plan ve günlük davranışlar cihazda otomatik saklanır.
+- Yeni gün başladığında uygulama günlük kullanımı öne almak için tekrar Bugün'e döner.
+- Plan döngüsü tamamlandığında mevcut tercihleri koruyarak yeni plan başlatılabilir.
+- Beklenmeyen UI hatalarında uygulama seviyesinde kurtarma ekranı vardır.
 
-Lokma'nın günlük kullanım merkezi:
+## ☀️ Bugün
 
-- planın başladığı tarihe göre bugünün gerçek plan gününü otomatik bulur
-- Türkçe gerçek tarih gösterir
-- günün sıradaki öğününü öne çıkarır
-- öğünlerde `Yedim`, `Atladım`, `Değiştir`, `Detay` aksiyonları vardır
-- günlük yenilen kalori ve protein ilerlemesini gösterir
-- öğün durumları cihazda kalıcıdır
-- tarifleri `♥ Favori` olarak saklar; favoriler plan değişse bile korunur
-- bugün ve yarın ortak kullanılan malzemelerden **“yarın için şimdi hazırla”** önerisi üretir
-- bugün tekrar kullanılan alışveriş malzemelerini gösterir
-- plan süresi bittiğinde mevcut tercihleri koruyarak bugünden yeni plan başlatabilir
+- gerçek Türkçe tarih ve plan günü
+- sıradaki öğün
+- `Yedim / Atladım / Değiştir / Detay`
+- günlük kalori ve protein ilerlemesi
+- tahmini öğün harcaması
+- kalıcı tarif favorileri
+- bugün/yarın ortak malzeme sinyali
+- 3 günlük **Meal Prep** görevleri: ortak malzeme, toplam miktar, yaklaşık hazırlık süresi ve uygun ekipman
 
-## 🛒 Alışveriş deneyimi
+## 🧠 Plan motoru
 
-- paket boyuna göre haftalık alışveriş listesi
-- `Evde var` ve `Aldım` checklist aksiyonları
-- checklist durumu aynı sepet için cihazda kalıcıdır
-- `Evde var` veya `Aldım` işaretlenen kalemler kalan sepetten çıkarılır
-- Fiyat İstihbaratı yalnızca gerçekten kalan ürünleri karşılaştırır
-- kalan katalog maliyeti ve tamamlanma yüzdesi anlık güncellenir
-
-## ✅ Şu anda çalışan ürün parçaları
-
-- plan başlamadan önce canlı konum veya İl / İlçe / Mahalle seçimi
-- tarayıcı Geolocation API ile gerçek koordinat alma
-- OpenStreetMap Nominatim ile koordinatı İl / İlçe / Mahalle bilgisine dönüştürme
-- manuel İl / İlçe / Mahalle bilgisini harita noktasına dönüştürebilme
-- kullanıcı profili: yaş, boy, kilo, aktivite, hedef
+- 3–7 günlük plan
+- hedef kalori/protein
+- haftalık bütçe
+- kişi sayısı
 - hepçil / vejetaryen / vegan / pesketaryen
-- alerji / hassasiyet ve sevmediği yiyecek filtreleri
-- haftalık bütçe, gün sayısı ve kişi sayısı
-- ev / sipariş / dışarı yemek dağılımı
-- mutfak ekipmanı profili: Ocak, Fırın, Airfryer, Mikrodalga, Tost makinesi, Blender
-- ekipman uyumluluğunu dikkate alan plan motoru
-- 3–7 günlük haftalık plan üretimi
-- planı gerçek başlangıç tarihine bağlayan takvim katmanı
-- haftalık görünümde gerçek tarih başlıkları ve `Bugün / Geçmiş / Planlı` durumları
-- kalori / protein hedefleri
-- malzeme yeniden kullanım / israf azaltma mantığı
-- öğün değiştirme ve kilitleme
+- alerji/hassasiyet ve sevmediği ürün filtreleri
+- ev / sipariş / dışarı dağılımı
+- Ocak / Fırın / Airfryer / Mikrodalga / Tost makinesi / Blender uyumluluğu
+- malzeme yeniden kullanımı ve tekrar cezası
+- bütçe gerektiğinde pahalı dışarı öğünlerini daha uygun ev seçenekleriyle dengeleme
+- favorileri kontrollü biçimde yeni planlara taşıyan kişiselleştirme katmanı
+
+## 🍳 Tarif ve düzenleme
+
+- öğün değiştirme
+- öğün kilitleme
 - kilitli öğünleri koruyarak haftayı yeniden karıştırma
-- günlük öğün durumu takibi (`Yedim / Atladım`)
-- planlar arasında kalıcı tarif favorileri
-- tarif detay çekmecesi
-- aynı ev yemeği için alternatif pişirme senaryoları (ör. Ocak / Fırın / Airfryer)
-- **Nearby v0.3:** OpenStreetMap / Overpass ile çevredeki gerçek market ve restoran isimleri, türleri ve kuş uçuşu mesafeleri
-- OSM kaydında varsa açılış saati, web sitesi, telefon, paket servis / gel-al etiketleri
-- gerçek yakındaki restoranları sipariş / dışarı öğünlerine bağlama
-- gerçek yakındaki marketlerden birini alışveriş sepeti marketi olarak seçme
-- **Fiyat İstihbaratı v0.2:** kalan sepeti yakın gerçek marketler üzerinde açıkça etiketlenmiş fiyat simülasyonuyla karşılaştırma
-- simülasyon üzerinden “en ucuz tek market” karşılaştırması
-- en fazla 2 markete bölünmüş sepet optimizasyonu
-- market seçimini en çok etkileyen fiyat oynaklığı yüksek ürünleri gösterme
+- kişi sayısına göre malzeme miktarı
+- “Lokma bunu neden seçti?” açıklaması
+- aynı ev yemeği için uygun olduğunda farklı pişirme senaryoları
+- Ocak / Fırın / Airfryer vb. ekipman kontrolü
 
-## 📍 Konum ve işletme verisi
+## 🛒 Dolap + alışveriş
 
-Şu anda gerçek konum ve gerçek işletme keşfi vardır. Nearby v0.3, anahtar gerektirmeyen açık veri kaynaklarıyla çalışır:
+- haftanın tamamından üretilen paket bazlı alışveriş listesi
+- her kalem için **evdeki miktarı** girme
+- örneğin ihtiyaç 900 g, dolapta 600 g ise net 300 g ihtiyacı yeniden hesaplama
+- `Tamamı evde` ve `Aldım` aksiyonları
+- kalan miktarı market paket boyuna tekrar yuvarlama
+- checklist ve stok durumu localStorage'da saklama
+- Fiyat İstihbaratı yalnızca net kalan sepet üzerinde çalışır
 
-- OpenStreetMap Nominatim: adres / koordinat çözümleme
-- OpenStreetMap Overpass: yakındaki market ve restoran keşfi
+## 📍 Gerçek çevre
 
-Restoran adayları öğünün adı / etiketi, işletmenin mutfak türü ve mesafesi birlikte değerlendirilerek sıralanır. Kullanıcı bir restoranı doğrudan dışarı / sipariş öğününe bağlayabilir. Market tarafında da yakındaki gerçek işletmelerden biri sepet marketi olarak seçilebilir.
+Anahtar gerektirmeyen açık veri kaynaklarıyla:
 
-OpenStreetMap kayıtları eksik veya güncel olmayabilir. İşletme meta bilgileri sadece OSM kaydında mevcutsa gösterilir.
+- Browser Geolocation: gerçek cihaz koordinatı
+- Nominatim: koordinat ↔ İl / İlçe / Mahalle çözümleme
+- OpenStreetMap / Overpass: yakındaki gerçek market ve restoran keşfi
+- gerçek işletme adı, türü ve kuş uçuşu mesafe
+- OSM kaydında varsa açılış saati, web sitesi, telefon, paket servis/gel-al bilgisi
+- dışarı/sipariş öğününe gerçek restoran bağlama
+- alışveriş sepetine gerçek yakın market seçme
 
-## 💸 Fiyat veri sözleşmesi
+OpenStreetMap kayıtları eksik veya eski olabilir; bu yüzden işletme metadatası kesin gerçek-zaman bilgisi gibi sunulmaz.
 
-Lokma fiyatın kaynağını veri modelinde ayırır. Böylece simülasyon fiyatı yanlışlıkla canlı fiyatmış gibi gösterilmez.
+## 💸 Fiyat İstihbaratı
+
+Fiyat kaynağı modelde açıkça ayrıdır:
 
 - `simulated`: geliştirme / optimizasyon senaryosu
-- `manual`: kullanıcı veya operasyon tarafından doğrulanmış manuel fiyat girişi
-- `live`: gerçek market / menü fiyat sağlayıcısından gelen veri
+- `manual`: doğrulanmış manuel fiyat girişi için ayrılmış sınıf
+- `live`: gerçek sağlayıcı için ayrılmış sınıf
 
-**Fiyat İstihbaratı v0.2** şu anda `simulated` çalışır. Market adı ve mesafesi gerçek Nearby verisidir; ürün fiyatı değildir.
+Şu an market isimleri ve mesafeler gerçektir; ürün fiyatları **simülasyondur**.
 
-## 🧪 Şimdilik demo / simülasyon kalan veri
+Çalışan optimizasyon:
 
-- market ürün fiyatları
-- restoran / sipariş fiyatları
-- restoran menü besin değerleri
-- stok bilgisi
-- yürüyüş / sürüş rota mesafesi
+- net kalan sepet için tek-market karşılaştırması
+- en fazla 2 markete bölünmüş sepet senaryosu
+- market seçimini en çok etkileyen fiyat farkı yüksek ürünler
+- seçilen gerçek marketi sepetle ilişkilendirme
 
-## 🗺️ Sıradaki büyük geliştirmeler
+## 👤 Profil ve öğrenme
 
-1. favorilerin yeni plan seçimlerine kontrollü biçimde ağırlık vermesi
-2. gerçek market ürün sağlayıcısı / fiyat normalizasyon adaptörleri
-3. gerçek restoran menü / ürün eşleştirme katmanı
-4. kullanıcı doğrulamalı manuel fiyat girişi ve fiyat geçmişi
-5. çoklu market optimizasyonuna yürüyüş/sürüş zamanı ve yol maliyeti ekleme
-6. batch cooking / meal-prep zamanı ve haftalık mutfak takvimi
-7. geçmiş planlar ve kullanıcı geri bildiriminden öğrenme
+- mobil Profil Merkezi
+- hedef / bütçe / konum / mutfak özeti
+- favori tarifleri görme ve silme
+- “favorileri yeni plana kat” ayarı
+- hareketleri azalt / erişilebilirlik tercihi
+- geçmiş planları otomatik arşivleme
+- geçmiş planda takip yüzdesi, bütçe, ortalama kalori/protein ve yemek özeti
+- yerel verileri tamamen sıfırlama
+
+## 🧪 Bilerek launch fazına bırakılanlar
+
+Bunlar local ürün deneyiminin kırık olduğu anlamına gelmez; dış servis, mağaza veya operasyon kararı gerektiren yayın işleri olarak ayrılmıştır:
+
+- gerçek market ürün/stok/fiyat sağlayıcıları
+- gerçek restoran menü ve menü fiyatları
+- rota API'siyle yürüyüş/sürüş süresi
+- kullanıcı hesabı ve bulut senkronizasyonu
+- push notification altyapısı
+- analytics / crash reporting sağlayıcısı
+- App Store / Google Play native paketleme ve mağaza varlıkları
+- privacy/terms/consent metinleri
+- reklam SDK'sı / premium modeli
+
+## 💰 Monetizasyon hazırlığı
+
+Kod tabanında reklam/premium sözleşmesi ayrılmıştır ancak **reklamlar tamamen kapalıdır**. İlk kullanım, konum izni, alerji/hassasiyet ve tarif pişirme adımları reklam dışı yüzeyler olarak tanımlanmıştır. Gerçek reklam modeli ürün incelemesinden sonra birlikte kararlaştırılacaktır.
+
+## ✅ Kalite
+
+`.github/workflows/ci.yml` yalnızca doğrulama yapar; deploy etmez.
+
+Her push'ta:
+
+```bash
+npm install
+npm run build
+```
+
+çalıştırılarak TypeScript + Vite build kontrol edilir. Hata halinde kısa süreli build log artifact'i üretilir.
 
 ## 🎨 Tasarım ilkeleri
 
-- **mobile-first**: web sitesi hissinden çok mobil uygulama davranışı
-- kullanıcıyı ilk girişte doğrudan temel işe götürmek
-- günlük tekrar kullanım için ayrı Bugün yüzeyi
-- tek elle kullanılabilir büyük dokunma alanları
-- alt sabit uygulama navigasyonu
+- mobile-first, tek elle kullanılabilir
+- ilk girişte doğrudan temel işe götürme
+- günlük kullanım için Bugün yüzeyi
+- warm/off-white + yeşil Lokma dili
 - safe-area uyumu
-- bol görsel ve sıcak yemek dili
-- kontrollü emoji kullanımı
-- hafif mikro animasyonlar
-- bütçenin her zaman görünür olması
-- “neden bunu önerdin?” açıklanabilirliği
-- gerçek veri ile demo / simülasyon verisinin açıkça ayrılması
-- kullanıcının elindeki ekipmana ve gerçek çevresine uyan öneriler
+- açıklanabilir öneriler
+- bütçeyi görünür tutma
+- gerçek veri ile demo/simülasyonu asla karıştırmama
+- mutfak ekipmanı ve çevreyi gerçek ürün girdisi kabul etme
+- reklamı kullanıcı deneyiminin önüne koymama
