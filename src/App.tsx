@@ -25,6 +25,7 @@ const initialProfile: UserPlanProfile = {
   people: 1,
   stylePreset: 'Dengeli',
   mealSplit: { home: 60, delivery: 30, dineOut: 10 },
+  cookingEquipment: ['Ocak', 'Fırın'],
   city: '',
   district: '',
   neighborhood: '',
@@ -104,7 +105,7 @@ function App() {
         <div className="why-card"><div className="why-copy"><span className="eyebrow">♻️ Sadece tarif uygulaması değil</span><h2>Asıl mesele, aldığını gerçekten kullanmak.</h2><p>Lokma'nın hedefi tek tek güzel tarifler göstermek değil. Aynı malzemeyi hafta boyunca mantıklı biçimde yeniden kullanıp market sepetini, öğün planını ve bütçeyi birlikte optimize etmek.</p><button type="button" onClick={startPlan}>Planımı kurmaya başla →</button></div><div className="ingredient-chain" aria-hidden="true"><div className="ingredient-main">🍗<small>1 paket</small></div><span>→</span><div>🥙<small>Pzt</small></div><span>→</span><div>🌯<small>Çar</small></div><span>→</span><div>🍝<small>Cum</small></div></div></div>
       </section>
 
-      <footer className="footer shell"><div className="brand"><span className="brand-mark">🍋</span><span>lokma</span></div><p>Türkiye’den başlayan akıllı yemek planlama deneyimi.</p><span>Local prototype • v0.3</span></footer>
+      <footer className="footer shell"><div className="brand"><span className="brand-mark">🍋</span><span>lokma</span></div><p>Türkiye’den başlayan akıllı yemek planlama deneyimi.</p><span>Local prototype • v0.4</span></footer>
     </main>
   )
 }
