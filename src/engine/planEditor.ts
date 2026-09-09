@@ -1,6 +1,6 @@
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { recipeSupportsEquipment } from '../services/cookingCompatibility'
-import { calculateNutritionTargets } from './planEngine'
+import { calculateNutritionTargets } from './basePlanEngine'
 import type { PlannedDay, PlannedMeal, Recipe, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
 
 function normalize(text: string) {
