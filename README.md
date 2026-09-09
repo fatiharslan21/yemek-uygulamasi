@@ -1,6 +1,6 @@
 # 🍋 Lokma — Akıllı Yemek Planlayıcı
 
-Türkiye'den başlayıp daha sonra Avrupa ve ABD'ye açılması planlanan; bütçe, beslenme tipi, hedef, konum, mutfak ekipmanı ve gün sayısı üzerinden haftalık yemek planı oluşturan uygulama.
+Türkiye'den başlayıp daha sonra Avrupa ve ABD'ye açılması planlanan; bütçe, beslenme tipi, hedef, konum, mutfak ekipmanı ve gün sayısı üzerinden haftalık yemek planı oluşturan mobil-first uygulama.
 
 > Bu repo şu aşamada yalnızca **local development** içindir. Netlify, Vercel veya başka bir publish/deploy ayarı yoktur.
 
@@ -14,6 +14,19 @@ npm run dev
 ```
 
 Tarayıcıda Vite'ın verdiği local adresi aç. Varsayılan adres genellikle `http://localhost:5173` olur.
+
+## 📱 Uygulama davranışı
+
+Lokma artık landing-first bir web sitesi gibi davranmaz.
+
+- **İlk kez giren kullanıcı** doğrudan konum → profil → plan oluşturma akışına gider.
+- İlk onboarding tamamlandığında profil bu cihazda localStorage ile saklanır.
+- **Geri gelen kullanıcı** doğrudan son plan ekranına gider.
+- Haftalık plan, öğün değişiklikleri, kilitli öğünler, plan seed'i ve açık sekme ayrıca plan oturumu olarak saklanır.
+- Profil değişirse eski plan oturumu fingerprint uyuşmadığı için otomatik kullanılmaz; yeni tercihlerle yeni plan oluşturulur.
+- Tanıtım/“Lokma hakkında” ekranı ikincil ekrandır; ürünün ana giriş kapısı değildir.
+- Mobilde dashboard navigasyonu alt sabit uygulama çubuğu gibi davranır.
+- iOS/Android safe-area ve mobil web-app meta ayarları bulunur.
 
 ## ✅ Şu anda çalışan ürün parçaları
 
@@ -77,8 +90,8 @@ Lokma fiyatın kaynağını veri modelinde ayırır. Böylece simülasyon fiyat�
 Şu an üç veri sınıfı hedefleniyor:
 
 - `simulated`: geliştirme / optimizasyon senaryosu
-- `manual`: kullanıcı veya operasyon tarafından doğrulanmış manuel fiyat girişi (sonraki faz)
-- `live`: gerçek market / menü fiyat sağlayıcısından gelen veri (sonraki faz)
+- `manual`: kullanıcı veya operasyon tarafından doğrulanmış manuel fiyat girişi
+- `live`: gerçek market / menü fiyat sağlayıcısından gelen veri
 
 **Fiyat İstihbaratı v0.1** şu anda `simulated` çalışır. Market adı ve mesafesi gerçek Nearby verisidir; ürün fiyatı değildir.
 
@@ -102,7 +115,10 @@ Lokma fiyatın kaynağını veri modelinde ayırır. Böylece simülasyon fiyat�
 
 ## 🎨 Tasarım ilkeleri
 
-- mobil öncelikli responsive yapı
+- **mobile-first**: web sitesi hissinden çok mobil uygulama davranışı
+- tek elle kullanılabilir büyük dokunma alanları
+- alt sabit uygulama navigasyonu
+- safe-area uyumu
 - bol görsel ve sıcak yemek dili
 - kontrollü emoji kullanımı
 - hafif mikro animasyonlar
