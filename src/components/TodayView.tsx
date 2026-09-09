@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { MealBusinessLine } from './MealBusinessLine'
 import { formatPlanDate, greetingForNow, planDayIndex } from '../services/planCalendar'
@@ -88,8 +88,10 @@ export function TodayView({
     const tomorrowIds = ingredientIds(tomorrow.meals)
     return [...todayIds]
       .filter((id) => tomorrowIds.has(id))
-      .map((id) => INGREDIENT_BY_ID[id])
-      .filter(Boolean)
+      .flatMap((id) => {
+        const ingredient = INGREDIENT_BY_ID[id]
+        return ingredient ? [ingredient] : []
+      })
       .slice(0, 4)
   }, [day, activeIndex, plan.days])
 
@@ -127,7 +129,7 @@ export function TodayView({
           <h1>{greetingForNow()}{profile.name ? `, ${profile.name}` : ''}. <em>Bugün ne var?</em></h1>
           <p>{nextMeal ? `Sıradaki: ${nextMeal.slot} • ${nextMeal.title}` : 'Bugünkü öğünlerin tamamını işaretledin. ✨'}</p>
         </div>
-        <div className="today-completion-ring" style={{ '--today-progress': `${completionPct * 3.6}deg` } as React.CSSProperties}>
+        <div className="today-completion-ring" style={{ '--today-progress': `${completionPct * 3.6}deg` } as CSSProperties}>
           <div><strong>%{completionPct}</strong><small>gün</small></div>
         </div>
       </header>
