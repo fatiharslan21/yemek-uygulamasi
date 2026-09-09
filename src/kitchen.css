@@ -1,0 +1,31 @@
+.kitchen-equipment-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+.kitchen-equipment-option { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; min-height: 72px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 17px; background: #fff; text-align: left; color: var(--ink); transition: .18s ease; }
+.kitchen-equipment-option:hover { transform: translateY(-1px); border-color: rgba(47,112,84,.32); }
+.kitchen-equipment-option.selected { background: #f1f6df; border-color: rgba(47,112,84,.45); box-shadow: inset 0 0 0 1px rgba(47,112,84,.07); }
+.kitchen-equipment-option > span:first-child { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: #f7f4ec; font-size: 19px; }
+.kitchen-equipment-option div { display: grid; gap: 3px; }
+.kitchen-equipment-option strong { font-size: 10px; }
+.kitchen-equipment-option small { color: #8a938d; font-size: 7px; line-height: 1.35; }
+.kitchen-equipment-option b { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #f0f1eb; color: #9aa29d; font-size: 9px; }
+.kitchen-equipment-option.selected b { background: var(--green); color: #fff; }
+.kitchen-hint { display: flex; gap: 9px; margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: #f7f7f1; color: #778179; font-size: 8px; line-height: 1.5; }
+.cooking-method-section { background: linear-gradient(180deg,rgba(240,245,218,.36),rgba(255,255,255,0)); }
+.cooking-equipment-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 13px; }
+.cooking-equipment-summary span { padding: 6px 8px; border-radius: 999px; background: #edf3dc; color: #53673f; font-size: 8px; font-weight: 900; }
+.cooking-method-tabs { display: flex; flex-wrap: wrap; gap: 7px; }
+.cooking-method-tab { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; background: #fff; color: #647068; font-size: 8px; font-weight: 900; }
+.cooking-method-tab.active { background: var(--green); border-color: var(--green); color: #fff; }
+.cooking-method-tab.unavailable { border-style: dashed; opacity: .72; }
+.cooking-method-tab em { font-style: normal; font-size: 7px; opacity: .78; }
+.cooking-guide-card { margin-top: 12px; padding: 14px; border: 1px solid rgba(47,112,84,.1); border-radius: 18px; background: #fff; }
+.cooking-guide-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+.cooking-guide-top div { display: grid; gap: 4px; }
+.cooking-guide-top strong { font-size: 11px; color: var(--ink); }
+.cooking-guide-top p { margin: 0; color: #7f8982; font-size: 8px; line-height: 1.45; }
+.cooking-guide-top span { flex: 0 0 auto; padding: 6px 8px; border-radius: 999px; background: #f1f3e5; color: #5d6d4e; font-size: 8px; font-weight: 900; }
+.cooking-guide-requirements { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.cooking-guide-requirements span { padding: 5px 7px; border-radius: 999px; background: #f5f4ee; color: #758078; font-size: 7px; font-weight: 800; }
+.cooking-guide-requirements span.missing { background: #fff0e9; color: #a65b40; }
+.cooking-method-note { margin-top: 10px; padding: 9px 10px; border-radius: 12px; background: #fff5eb; color: #88674f; font-size: 7px; line-height: 1.5; }
+@media (max-width: 760px) { .kitchen-equipment-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 480px) { .kitchen-equipment-grid { grid-template-columns: 1fr; } }
