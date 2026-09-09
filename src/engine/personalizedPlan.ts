@@ -1,6 +1,6 @@
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { recipeSupportsEquipment } from '../services/cookingCompatibility'
-import { generateWeeklyPlan } from './planEngine'
+import { generateWeeklyPlan as generateBaseWeeklyPlan } from './basePlanEngine'
 import { rebuildEditedPlan, swapMealInEditedPlan } from './planEditor'
 import type { PlannedMeal, Recipe, UserPlanProfile, WeeklyPlan } from '../types'
 
@@ -112,7 +112,7 @@ export function generatePersonalizedPlan(
   seed = 1,
   favoriteRecipeIds: Set<string> = new Set(),
 ) {
-  return applyFavoriteBias(generateWeeklyPlan(profile, seed), profile, favoriteRecipeIds, seed)
+  return applyFavoriteBias(generateBaseWeeklyPlan(profile, seed), profile, favoriteRecipeIds, seed)
 }
 
 export function swapMealWithPreference(
@@ -133,7 +133,6 @@ export function swapMealWithPreference(
     .filter((recipe) => recipeMatchesProfile(recipe, profile))
     .sort((a, b) => compatibleFavoriteScore(a, currentMeal, profile) - compatibleFavoriteScore(b, currentMeal, profile))
 
-  // Her değişimde favoriyi zorlamıyoruz. Yaklaşık her üç değişimden birinde uygun favori varsa öne alıyoruz.
   if (favoriteCandidates.length > 0 && Math.abs(seed) % 3 === 0) {
     const recipe = favoriteCandidates[Math.abs(seed) % Math.min(2, favoriteCandidates.length)]
     const days = plan.days.map((day) => ({ ...day, meals: day.meals.map((meal) => ({ ...meal })) }))
