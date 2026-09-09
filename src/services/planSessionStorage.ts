@@ -36,6 +36,9 @@ export function loadPlanSession(profile: UserPlanProfile): SavedPlanSession | nu
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SavedPlanSession>
       if (parsed.version !== 2 || parsed.profileFingerprint !== profileFingerprint(profile) || !parsed.plan) return null
+      const savedAt = typeof parsed.savedAt === 'string' ? parsed.savedAt : new Date().toISOString()
+      const savedDay = savedAt.slice(0, 10)
+      const resumeTab: DashboardTab = savedDay === localDateKey() ? parseTab(parsed.tab) : 'today'
       return {
         version: 2,
         profileFingerprint: parsed.profileFingerprint,
@@ -44,9 +47,9 @@ export function loadPlanSession(profile: UserPlanProfile): SavedPlanSession | nu
         mealStatuses: parsed.mealStatuses && typeof parsed.mealStatuses === 'object' ? parsed.mealStatuses : {},
         seed: typeof parsed.seed === 'number' ? parsed.seed : 1,
         swapSeed: typeof parsed.swapSeed === 'number' ? parsed.swapSeed : 10,
-        tab: parseTab(parsed.tab),
+        tab: resumeTab,
         startedAt: typeof parsed.startedAt === 'string' ? parsed.startedAt : localDateKey(),
-        savedAt: typeof parsed.savedAt === 'string' ? parsed.savedAt : new Date().toISOString(),
+        savedAt,
       }
     }
 
