@@ -1,17 +1,21 @@
 # Lokma — Product Status
 
-## Local MVP / review hedefi
+## Local review hedefi
 
 Bu aşamanın amacı uygulamayı yayınlamak değil; kullanıcının telefonda kullanıyormuş gibi baştan sona deneyebileceği, build'i geçen ve temel ürün kararları tamamlanmış bir local sürüm üretmektir.
 
-### Review sürümünde tamam sayılan alanlar
+### Tamamlanan ürün alanları
 
 - first-run konum + onboarding
+- haftalık menüyü görmeden planı başlatmama
+- menü yeniden oluşturma / düzenleme / onaylama
 - returning-user resume
 - mobil Bugün / Hafta / Liste / Profil navigasyonu
 - tarih bazlı plan döngüsü
+- yeni hafta için tekrar menü onayı
 - bütçe / kalori / protein plan motoru
 - diyet / hassasiyet / dislikes filtreleri
+- ek katalog güvenlik eşlemeleri
 - mutfak ekipmanı uyumluluğu
 - öğün swap / lock / shuffle
 - tarif detayı + alternatif pişirme yöntemleri
@@ -20,61 +24,81 @@ Bu aşamanın amacı uygulamayı yayınlamak değil; kullanıcının telefonda k
 - 3 günlük meal-prep görevleri
 - paket bazlı alışveriş listesi
 - miktarlı dolap stoğu ve net ihtiyaç hesabı
-- gerçek Nearby market/restoran keşfi
-- gerçek işletmeyi öğün veya sepete bağlama
-- açıkça etiketli simülasyon fiyat istihbaratı
-- 1-market / 2-market sepet optimizasyonu
+- sabit BİM / A101 / ŞOK / Migros / CarrefourSA tahmini fiyat bantları
+- gerçek Nearby restoran keşfi
+- dışarı/sipariş öğününe restoran bağlama
+- kilo takibi
 - profil merkezi ve erişilebilirlik ayarı
 - plan geçmişi
+- local-first hesap/bulut adaptörü
+- Supabase auth + kullanıcı yedeği için hazır servis ve RLS şeması
+- kesin GPS koordinatını bulut yedeğinden çıkarma
+- yerel JSON yedeği indirme
+- uygulama içi gizlilik / kullanım özeti
+- kullanıcı dostu reklam politikasının kod seviyesinde tanımlanması
 - app-level error recovery
-- mobile manifest / standalone hazırlığı
+- PWA manifest / standalone hazırlığı
+- Capacitor 8 native shell config ve scriptleri
 - non-deploying CI build doğrulaması
 
-## Launch fazına bilerek bırakılan işler
+## Yayından önce tamamlanacak işler
 
-Aşağıdaki işler local MVP'nin feature-complete olmasını engellemez; gerçek servis, hukuki metin, mağaza hesabı veya monetizasyon kararı gerektirir.
+### Bulut / hesap
 
-### Veri / backend
+- gerçek Supabase projesi oluşturup env anahtarlarını bağlama
+- üretim e-posta şablonları
+- şifre sıfırlama akışı
+- Apple Sign In
+- Google Sign In
+- hesap silme akışı
+- otomatik senkronizasyon açılacaksa conflict/merge stratejisi
 
-- gerçek market ürün, stok ve fiyat sağlayıcıları
+### Gerçek veri
+
+- gerçek market ürün / stok / fiyat sağlayıcıları
 - gerçek restoran menü / fiyat / besin verisi
-- kullanıcı hesabı, backend ve cihazlar arası sync
-- gerçek routing/ETA sağlayıcısı
+- rota API'siyle yürüyüş/sürüş süresi
 - server-side cache / rate-limit koruması
 
 ### Mobil mağaza
 
-- Capacitor/native shell veya seçilecek native paketleme stratejisi
+- Android/iOS platform klasörlerini nihai bundle ID ile oluşturma
 - iOS/Android permission metinleri
 - app icon / splash / store screenshots
-- signing, bundle identifiers, certificates
+- signing, certificates ve provisioning
 - TestFlight / Play Internal Testing
 - App Store / Google Play listing
 
 ### Operasyon / hukuk
 
-- Privacy Policy
-- Terms of Service
-- KVKK/GDPR ve gerektiğinde consent akışı
+- yayınlanabilir tam Privacy Policy URL'i
+- Terms of Service URL'i
+- KVKK/GDPR yükümlülüklerinin final kontrolü
+- gerektiğinde consent / ATT akışı
 - analytics/crash-reporting sağlayıcısı
 - support/contact akışı
 
 ### Monetizasyon
 
 - reklam ağı seçimi
-- consent / ATT / reklam gizlilik ayarları
-- premium/freemium teklifi
-- reklam yoğunluğu A/B kararı
-- gelir ölçümü
+- premium/freemium ürün paketi
+- satın alma/abonelik entegrasyonu
+- reklam consent ve ölçümleme
+- gelir / retention dashboard'u
 
 ## Reklam ürün kuralı
 
-Reklamlar local MVP'de kapalıdır. Daha sonra reklam açılsa bile onboarding, konum izni, alerji/hassasiyet girişi, tarif pişirme adımları ve hata kurtarma ekranı reklam dışı kalmalıdır.
+Reklamlar local review sürümünde kapalıdır.
 
-## Review sonrası karar
+Gelecekte reklam açılsa bile:
 
-Kullanıcı local nihai sürümü inceledikten sonra üç ayrı iş paketi açılır:
+- ilk 3 gün reklam gösterilmez,
+- onboarding reklam dışıdır,
+- menü onayı reklam dışıdır,
+- tarif adımları reklam dışıdır,
+- kilo takibi reklam dışıdır,
+- Hafta / Alışveriş ekranında en fazla bir doğal sponsor kartı hedeflenir.
 
-1. gerçek veri sağlayıcıları,
-2. mobil mağaza paketleme,
-3. monetizasyon + analytics + hukuki hazırlık.
+## Teknik yayın kararı
+
+Mevcut React/Vite uygulaması Capacitor ile iOS ve Android shell içine alınmaya hazırdır. Store signing başlamadan önce `com.lokma.app` geçici app ID'si nihai bundle/application ID ile değiştirilmelidir.
