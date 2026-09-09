@@ -3,6 +3,7 @@ import { OnboardingFlow } from './components/OnboardingFlow'
 import { PlanLocationGate } from './components/PlanLocationGate'
 import { StarterPlanDashboard } from './components/StarterPlanDashboard'
 import { clearAppState, loadSavedAppState, saveAppState } from './services/appStorage'
+import { clearPlanSession } from './services/planSessionStorage'
 import type { UserPlanProfile } from './types'
 import './onboarding.css'
 import './location-ui.css'
@@ -75,6 +76,7 @@ function App() {
 
   const resetLocalApp = () => {
     clearAppState()
+    clearPlanSession()
     setProfile(initialProfile)
     setHasCompletedOnboarding(false)
     setScreen('location')
@@ -140,7 +142,7 @@ function App() {
 
       {hasCompletedOnboarding && (
         <section className="shell local-profile-card">
-          <div><span>💾</span><div><strong>Bu cihazdaki Lokma profilini sıfırla</strong><p>İlk kullanım deneyimini baştan test etmek istersen kayıtlı profili silebilirsin.</p></div></div>
+          <div><span>💾</span><div><strong>Bu cihazdaki Lokma profilini sıfırla</strong><p>İlk kullanım deneyimini baştan test etmek istersen kayıtlı profil ve son plan oturumu birlikte silinir.</p></div></div>
           <button type="button" onClick={resetLocalApp}>Profili sıfırla</button>
         </section>
       )}
