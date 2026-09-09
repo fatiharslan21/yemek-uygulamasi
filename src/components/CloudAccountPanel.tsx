@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   cloudConfigured,
+  deleteCloudAccount,
   getCloudUser,
   signInWithEmail,
   signOutCloud,
@@ -80,6 +81,14 @@ export function CloudAccountPanel() {
     setMessage('Hesaptan çıkış yapıldı. Bu cihazdaki yerel veriler silinmedi.')
   })
 
+  const deleteAccount = () => run(async () => {
+    const confirmed = window.confirm('Bulut hesabın ve buluttaki Lokma yedeğin kalıcı olarak silinecek. Bu cihazdaki yerel planın kalacak. Hesabı silmek istiyor musun?')
+    if (!confirmed) return
+    await deleteCloudAccount()
+    setUserEmail(null)
+    setMessage('Bulut hesabın silindi. Bu cihazdaki yerel Lokma verileri korunuyor.')
+  })
+
   return (
     <section className="profile-section shell cloud-account-card">
       <div className="profile-section-head">
@@ -102,6 +111,7 @@ export function CloudAccountPanel() {
             <button type="button" disabled={busy} onClick={restore}>↙ Buluttaki yedeği getir</button>
             <button type="button" disabled={busy} className="quiet" onClick={logout}>Çıkış yap</button>
           </div>
+          <button type="button" className="cloud-delete-account" disabled={busy} onClick={deleteAccount}>Hesabımı kalıcı olarak sil</button>
         </div>
       ) : (
         <div className="cloud-auth-box">
