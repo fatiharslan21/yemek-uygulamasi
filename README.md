@@ -21,12 +21,29 @@ Lokma artık landing-first bir web sitesi gibi davranmaz.
 
 - **İlk kez giren kullanıcı** doğrudan konum → profil → plan oluşturma akışına gider.
 - İlk onboarding tamamlandığında profil bu cihazda localStorage ile saklanır.
-- **Geri gelen kullanıcı** doğrudan son plan ekranına gider.
-- Haftalık plan, öğün değişiklikleri, kilitli öğünler, plan seed'i ve açık sekme ayrıca plan oturumu olarak saklanır.
+- **Geri gelen kullanıcı** doğrudan mevcut plan deneyimine gider.
+- Dashboard'un ana sekmesi artık **☀️ Bugün** ekranıdır.
+- Aynı gün içinde kullanıcı son açık sekmesine dönebilir; yeni gün başladığında uygulama otomatik olarak Bugün ekranına döner.
+- Haftalık plan, öğün değişiklikleri, kilitli öğünler, `Yedim / Atladım` durumları, plan tarihi ve açık sekme plan oturumu olarak saklanır.
 - Profil değişirse eski plan oturumu fingerprint uyuşmadığı için otomatik kullanılmaz; yeni tercihlerle yeni plan oluşturulur.
 - Tanıtım/“Lokma hakkında” ekranı ikincil ekrandır; ürünün ana giriş kapısı değildir.
-- Mobilde dashboard navigasyonu alt sabit uygulama çubuğu gibi davranır.
+- Mobil dashboard alt navigasyonu **Bugün / Hafta / Liste / Profil** şeklindedir.
 - iOS/Android safe-area ve mobil web-app meta ayarları bulunur.
+
+## ☀️ Bugün ekranı
+
+Lokma'nın günlük kullanım merkezi:
+
+- planın başladığı tarihe göre bugünün gerçek plan gününü otomatik bulur
+- Türkçe gerçek tarih gösterir
+- günün sıradaki öğününü öne çıkarır
+- öğünlerde `Yedim`, `Atladım`, `Değiştir`, `Detay` aksiyonları vardır
+- günlük yenilen kalori ve protein ilerlemesini gösterir
+- öğün durumları cihazda kalıcıdır
+- tarifleri `♥ Favori` olarak saklar; favoriler plan değişse bile korunur
+- bugün ve yarın ortak kullanılan malzemelerden **“yarın için şimdi hazırla”** önerisi üretir
+- bugün tekrar kullanılan alışveriş malzemelerini gösterir
+- plan süresi bittiğinde mevcut tercihleri koruyarak bugünden yeni plan başlatabilir
 
 ## ✅ Şu anda çalışan ürün parçaları
 
@@ -42,12 +59,16 @@ Lokma artık landing-first bir web sitesi gibi davranmaz.
 - mutfak ekipmanı profili: Ocak, Fırın, Airfryer, Mikrodalga, Tost makinesi, Blender
 - ekipman uyumluluğunu dikkate alan plan motoru
 - 3–7 günlük haftalık plan üretimi
+- planı gerçek başlangıç tarihine bağlayan takvim katmanı
+- haftalık görünümde gerçek tarih başlıkları ve `Bugün / Geçmiş / Planlı` durumları
 - kalori / protein hedefleri
 - paket boyuna göre alışveriş listesi
 - malzeme yeniden kullanım / israf azaltma mantığı
 - öğün değiştirme
 - öğün kilitleme
 - kilitli öğünleri koruyarak haftayı yeniden karıştırma
+- günlük öğün durumu takibi (`Yedim / Atladım`)
+- planlar arasında kalıcı tarif favorileri
 - tarif detay çekmecesi
 - aynı ev yemeği için alternatif pişirme senaryoları (ör. Ocak / Fırın / Airfryer)
 - **Nearby v0.3:** OpenStreetMap / Overpass ile çevredeki gerçek market ve restoran isimleri, türleri ve kuş uçuşu mesafeleri
@@ -105,17 +126,20 @@ Lokma fiyatın kaynağını veri modelinde ayırır. Böylece simülasyon fiyat�
 
 ## 🗺️ Sıradaki büyük geliştirmeler
 
-1. gerçek market ürün sağlayıcısı / fiyat normalizasyon adaptörleri
-2. gerçek restoran menü / ürün eşleştirme katmanı
-3. kullanıcı doğrulamalı manuel fiyat girişi ve fiyat geçmişi
-4. çoklu market optimizasyonuna yürüyüş/sürüş zamanı ve yol maliyeti ekleme
-5. tarif kataloğunu büyütme ve tarif bazlı doğrulanmış pişirme adımları
-6. favoriler, geçmiş planlar ve kullanıcı geri bildiriminden öğrenme
+1. alışveriş listesine `Evde var / Aldım` checklist ve dolap durumu
+2. favorilerin yeni plan seçimlerine kontrollü biçimde ağırlık vermesi
+3. gerçek market ürün sağlayıcısı / fiyat normalizasyon adaptörleri
+4. gerçek restoran menü / ürün eşleştirme katmanı
+5. kullanıcı doğrulamalı manuel fiyat girişi ve fiyat geçmişi
+6. çoklu market optimizasyonuna yürüyüş/sürüş zamanı ve yol maliyeti ekleme
 7. batch cooking / meal-prep zamanı ve haftalık mutfak takvimi
+8. geçmiş planlar ve kullanıcı geri bildiriminden öğrenme
 
 ## 🎨 Tasarım ilkeleri
 
 - **mobile-first**: web sitesi hissinden çok mobil uygulama davranışı
+- kullanıcıyı ilk girişte doğrudan temel işe götürmek
+- günlük tekrar kullanım için ayrı Bugün yüzeyi
 - tek elle kullanılabilir büyük dokunma alanları
 - alt sabit uygulama navigasyonu
 - safe-area uyumu
