@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { OnboardingFlow } from './components/OnboardingFlow'
+import { PlanHistoryPanel } from './components/PlanHistoryPanel'
 import { PlanLocationGate } from './components/PlanLocationGate'
 import { StarterPlanDashboard } from './components/StarterPlanDashboard'
 import { clearAppState, loadSavedAppState, saveAppState } from './services/appStorage'
-import { clearPlanSession } from './services/planSessionStorage'
 import { clearFavoriteRecipeIds } from './services/favoritesStorage'
+import { clearPlanHistory } from './services/planHistoryStorage'
+import { clearPlanSession } from './services/planSessionStorage'
 import type { UserPlanProfile } from './types'
 import './onboarding.css'
 import './location-ui.css'
@@ -79,6 +81,7 @@ function App() {
     clearAppState()
     clearPlanSession()
     clearFavoriteRecipeIds()
+    clearPlanHistory()
     setProfile(initialProfile)
     setHasCompletedOnboarding(false)
     setScreen('location')
@@ -142,10 +145,12 @@ function App() {
         <div className="why-card"><div className="why-copy"><span className="eyebrow">♻️ Sadece tarif uygulaması değil</span><h2>Asıl mesele, aldığını gerçekten kullanmak.</h2><p>Lokma tek tek güzel tarif göstermek yerine aynı malzemeyi hafta boyunca mantıklı biçimde yeniden kullanmayı, sepeti ve dışarıda yemeyi birlikte optimize etmeyi hedefliyor.</p><button type="button" onClick={() => hasCompletedOnboarding ? setScreen('dashboard') : startPlan()}>{hasCompletedOnboarding ? 'Planıma dön →' : 'Planımı kurmaya başla →'}</button></div><div className="ingredient-chain" aria-hidden="true"><div className="ingredient-main">🍗<small>1 paket</small></div><span>→</span><div>🥙<small>Pzt</small></div><span>→</span><div>🌯<small>Çar</small></div><span>→</span><div>🍝<small>Cum</small></div></div></div>
       </section>
 
+      {hasCompletedOnboarding && <PlanHistoryPanel />}
+
       {hasCompletedOnboarding && (
         <section className="shell local-profile-card">
-          <div><span>💾</span><div><strong>Bu cihazdaki Lokma profilini sıfırla</strong><p>İlk kullanım deneyimini baştan test etmek istersen kayıtlı profil, son plan oturumu ve favoriler birlikte silinir.</p></div></div>
-          <button type="button" onClick={resetLocalApp}>Profili sıfırla</button>
+          <div><span>💾</span><div><strong>Bu cihazdaki Lokma verilerini sıfırla</strong><p>İlk kullanım deneyimini baştan test etmek istersen profil, son plan, favoriler ve plan geçmişi birlikte silinir.</p></div></div>
+          <button type="button" onClick={resetLocalApp}>Tüm yerel veriyi sıfırla</button>
         </section>
       )}
 
