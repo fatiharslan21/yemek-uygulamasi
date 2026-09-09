@@ -14,6 +14,10 @@ export type NearbyPlace = {
   cuisine?: string
   openingHours?: string
   brand?: string
+  website?: string
+  phone?: string
+  delivery?: boolean
+  takeaway?: boolean
   provider: 'OpenStreetMap'
 }
 
@@ -68,6 +72,22 @@ function restaurantSubtype(tags: Record<string, string>) {
   if (tags.amenity === 'fast_food') return 'Hızlı yemek'
   if (tags.amenity === 'cafe') return 'Kafe'
   return 'Restoran'
+}
+
+function yesNo(value?: string) {
+  if (!value) return undefined
+  const normalized = value.toLocaleLowerCase('en-US')
+  if (['yes', 'only', 'designated'].includes(normalized)) return true
+  if (['no', 'none'].includes(normalized)) return false
+  return undefined
+}
+
+function firstTag(tags: Record<string, string>, ...keys: string[]) {
+  for (const key of keys) {
+    const value = tags[key]?.trim()
+    if (value) return value
+  }
+  return undefined
 }
 
 function buildQuery(coords: BrowserCoordinates, radius: number) {
@@ -145,6 +165,10 @@ export async function searchNearbyPlaces(coords: BrowserCoordinates, radius = 18
       cuisine: tags.cuisine,
       openingHours: tags.opening_hours,
       brand: tags.brand,
+      website: firstTag(tags, 'website', 'contact:website', 'url'),
+      phone: firstTag(tags, 'phone', 'contact:phone'),
+      delivery: yesNo(tags.delivery),
+      takeaway: yesNo(tags.takeaway),
       provider: 'OpenStreetMap',
     }]
   })
