@@ -1,4 +1,5 @@
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
+import { recipePassesCatalogSafety } from '../services/catalogSafety'
 import { recipeSupportsEquipment } from '../services/cookingCompatibility'
 import { calculateNutritionTargets } from './basePlanEngine'
 import type { PlannedDay, PlannedMeal, Recipe, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
@@ -10,6 +11,7 @@ function normalize(text: string) {
 function recipeMatchesProfile(recipe: Recipe, profile: UserPlanProfile) {
   if (!recipe.allowedDiets.includes(profile.diet)) return false
   if (!recipeSupportsEquipment(recipe, profile.cookingEquipment)) return false
+  if (!recipePassesCatalogSafety(recipe, profile)) return false
 
   const selectedAllergies = new Set(profile.allergies.map(normalize))
   if (recipe.allergens.some((allergen) => selectedAllergies.has(normalize(allergen)))) return false
