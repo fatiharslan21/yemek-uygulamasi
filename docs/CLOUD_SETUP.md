@@ -27,7 +27,19 @@ VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 
 `.env.local` git'e gönderilmez.
 
-## 4. Çalıştır
+## 4. Hesap silme fonksiyonunu deploy et
+
+Uygulama içindeki “Hesabımı kalıcı olarak sil” butonu sunucu tarafında `supabase/functions/delete-account/index.ts` fonksiyonunu çağırır.
+
+Supabase CLI ile proje bağlandıktan sonra:
+
+```bash
+supabase functions deploy delete-account
+```
+
+Fonksiyon, istekteki kullanıcı oturumunu doğrular ve yalnızca o kullanıcıyı siler. `SUPABASE_SERVICE_ROLE_KEY` yalnızca Edge Function ortamında kalır; web uygulamasına veya `VITE_*` değişkenlerine asla konmaz.
+
+## 5. Çalıştır
 
 ```bash
 npm install
@@ -43,11 +55,13 @@ Profil > Planını güvenceye al bölümünde hesap açma/giriş ve yedekleme bu
 - Geri yükleme mevcut cihaz verisini ezmeden önce kullanıcı onayı ister.
 - Kesin `latitude`, `longitude` ve `locationAccuracy` alanları bulut payload'ından çıkarılır.
 - Bulut yedeği plan, favoriler, kilo geçmişi, plan geçmişi ve diğer `lokma.*` yerel kayıtlarını taşır.
+- Hesap silme bulut hesabı ve bulut yedeğini kaldırır; cihazdaki yerel plan ayrıca silinmez.
 
 ## Canlıya çıkmadan önce
 
 - E-posta şablonları Lokma markasına göre düzenlenmeli.
-- Şifre sıfırlama ekranı eklenmeli.
+- Şifre sıfırlama akışı eklenmeli.
 - Apple ve Google login test edilmeli.
-- Hesap silme akışı eklenmeli ve store politika gereksinimleri tekrar kontrol edilmeli.
+- Hesap silme Edge Function'ı production ortamında test edilmeli.
+- Store politika gereksinimleri yayın haftasında yeniden kontrol edilmeli.
 - Sunucu tarafında son-yazma / merge politikası netleştirilmeden otomatik çift yönlü senkronizasyon açılmamalı.
