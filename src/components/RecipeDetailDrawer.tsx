@@ -3,6 +3,7 @@ import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { useNearbyData } from '../context/NearbyDataContext'
 import { getCookingGuides, guideIsAvailable } from '../services/cookingGuides'
 import { rankRestaurantsForMeal } from '../services/businessMatcher'
+import type { NearbyPlace } from '../services/nearbyPlaces'
 import type { PlannedMeal, Recipe, UserPlanProfile, WeeklyPlan } from '../types'
 import '../recipe-detail.css'
 import '../kitchen.css'
@@ -27,6 +28,11 @@ function quantityText(quantity: number, unit: 'g' | 'ml' | 'adet') {
 function distanceText(meters: number) {
   if (meters < 1000) return `${meters} m`
   return `${(meters / 1000).toFixed(1).replace('.', ',')} km`
+}
+
+function externalWebsite(value: string) {
+  if (/^https?:\/\//i.test(value)) return value
+  return `https://${value}`
 }
 
 function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile: UserPlanProfile, plan: WeeklyPlan) {
@@ -63,6 +69,22 @@ function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile:
   return reasons.slice(0, 5)
 }
 
+function BusinessMetadata({ place }: { place: NearbyPlace }) {
+  const hasMetadata = place.openingHours || place.website || place.phone || place.delivery != null || place.takeaway != null
+  if (!hasMetadata) return null
+
+  return (
+    <div className="business-real-meta">
+      {place.openingHours && <span>🕒 {place.openingHours}</span>}
+      {place.delivery === true && <span>🛵 Paket servis etiketi var</span>}
+      {place.delivery === false && <span>🚫 Paket servis etiketi yok</span>}
+      {place.takeaway === true && <span>🥡 Gel-al etiketi var</span>}
+      {place.phone && <a href={`tel:${place.phone}`}>☎ {place.phone}</a>}
+      {place.website && <a href={externalWebsite(place.website)} target="_blank" rel="noreferrer">🌐 Web sitesi ↗</a>}
+    </div>
+  )
+}
+
 export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwap, onToggleLock }: RecipeDetailDrawerProps) {
   const { places, restaurantAssignments, assignRestaurant } = useNearbyData()
   const recipe = RECIPE_CATALOG.find((item) => item.id === meal.recipeId)
@@ -90,7 +112,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
           <div><span>🔥 Kalori</span><strong>{meal.calories} kcal</strong></div>
           <div><span>💪 Protein</span><strong>{meal.protein} g</strong></div>
           <div><span>💸 Tahmin</span><strong>≈ {Math.round(meal.estimatedPrice).toLocaleString('tr-TR')} ₺</strong></div>
-          <div><span>⏱️ Süre</span><strong>{meal.source === 'Evde' ? (selectedGuide ? `≈ ${selectedGuide.minutes} dk` : 'Tarife göre') : assignedRestaurant ? distanceText(assignedRestaurant.distanceMeters) : 'İşletme seç'}</strong></div>
+          <div><span>⏱️ / 📏</span><strong>{meal.source === 'Evde' ? (selectedGuide ? `≈ ${selectedGuide.minutes} dk` : 'Tarife göre') : assignedRestaurant ? distanceText(assignedRestaurant.distanceMeters) : 'İşletme seç'}</strong></div>
         </div>
 
         <section className="recipe-detail-section">
@@ -154,9 +176,9 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
             <div className="recipe-section-title"><span>📍</span><div><h3>Bu öğünü nereden alalım?</h3><p>Nearby taramasındaki gerçek restoranları öğün türü + mutfak etiketi + mesafeye göre sıralıyoruz</p></div></div>
 
             {assignedRestaurant && (
-              <div className="assigned-restaurant-card">
+              <div className="assigned-restaurant-card assigned-rich">
                 <span>✓</span>
-                <div><strong>{assignedRestaurant.name}</strong><p>{assignedRestaurant.subtype} • {distanceText(assignedRestaurant.distanceMeters)}{assignedRestaurant.cuisine ? ` • ${assignedRestaurant.cuisine.split(';').join(', ')}` : ''}</p></div>
+                <div><strong>{assignedRestaurant.name}</strong><p>{assignedRestaurant.subtype} • {distanceText(assignedRestaurant.distanceMeters)}{assignedRestaurant.cuisine ? ` • ${assignedRestaurant.cuisine.split(';').join(', ')}` : ''}</p><BusinessMetadata place={assignedRestaurant} /></div>
                 <button type="button" onClick={() => assignRestaurant(meal.id, undefined)}>Değiştir</button>
               </div>
             )}
@@ -165,10 +187,11 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
               <div className="restaurant-candidate-list">
                 {restaurantCandidates.map((place, index) => {
                   const selected = assignedRestaurant?.id === place.id
+                  const serviceBits = [place.delivery === true ? '🛵' : '', place.takeaway === true ? '🥡' : '', place.website ? '🌐' : ''].filter(Boolean).join(' ')
                   return (
                     <button key={place.id} type="button" className={`restaurant-candidate ${selected ? 'selected' : ''}`} onClick={() => assignRestaurant(meal.id, selected ? undefined : place)}>
                       <span className="restaurant-rank">{index + 1}</span>
-                      <div><strong>{place.name}</strong><p>{place.subtype}{place.cuisine ? ` • ${place.cuisine.split(';').join(', ')}` : ''}</p></div>
+                      <div><strong>{place.name}</strong><p>{place.subtype}{place.cuisine ? ` • ${place.cuisine.split(';').join(', ')}` : ''}{serviceBits ? ` • ${serviceBits}` : ''}</p></div>
                       <b>📏 {distanceText(place.distanceMeters)}</b>
                       <em>{selected ? '✓ Seçildi' : 'Bu öğüne bağla'}</em>
                     </button>
@@ -181,7 +204,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
               </div>
             )}
 
-            <div className="restaurant-data-note">ℹ️ İşletme ve mesafe gerçek çevre verisinden geliyor. Bu aşamada seçtiğin restoranın gerçek menü fiyatı bilinmediği için öğünün bütçe tutarı hâlâ Lokma demo tahminidir.</div>
+            <div className="restaurant-data-note">ℹ️ İşletme adı, konum, mesafe ve yukarıda görünüyorsa iletişim/hizmet etiketleri OpenStreetMap kaydından gelir ve eksik veya güncel olmayabilir. Gerçek menü fiyatı bilinmediği için öğünün bütçe tutarı hâlâ Lokma demo tahminidir.</div>
           </section>
         )}
 
