@@ -1,0 +1,35 @@
+.meal-prep-panel { margin-top: 18px; padding: 18px; border: 1px solid rgba(45,76,54,.09); border-radius: 22px; background: linear-gradient(135deg,#fff6e7,#fffdf8 54%,#eef5e6); }
+.meal-prep-head { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; align-items: start; }
+.meal-prep-head h2 { margin: 4px 0 6px; color: #334b3d; font-family: 'Fraunces',serif; font-size: 25px; }
+.meal-prep-head p { margin: 0; max-width: 690px; color: #7c887f; font-size: 9px; line-height: 1.55; }
+.meal-prep-score { min-width: 120px; padding: 12px; border-radius: 15px; background: rgba(255,255,255,.78); text-align: center; }
+.meal-prep-score strong { display: block; color: #4a6a52; font-size: 15px; }
+.meal-prep-score small { color: #839087; font-size: 8px; }
+.meal-prep-progress { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; margin: 14px 0 10px; }
+.meal-prep-progress > div { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(91,115,92,.12); }
+.meal-prep-progress i { display: block; height: 100%; border-radius: inherit; background: #5f8066; }
+.meal-prep-progress span { color: #62766a; font-size: 8px; font-weight: 900; }
+.meal-prep-list { display: grid; gap: 8px; }
+.meal-prep-list article { display: grid; grid-template-columns: auto auto minmax(0,1fr); gap: 10px; align-items: start; padding: 11px; border: 1px solid rgba(49,79,57,.07); border-radius: 15px; background: rgba(255,255,255,.76); transition: .16s ease; }
+.meal-prep-list article.done { opacity: .62; background: #eef3e9; }
+.meal-prep-list article.done .meal-prep-copy strong { text-decoration: line-through; }
+.meal-prep-check { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid rgba(63,104,73,.18); border-radius: 9px; background: #fff; color: #fff; font-size: 12px; font-weight: 900; }
+.meal-prep-list article.done .meal-prep-check { background: #4d7758; border-color: #4d7758; }
+.meal-prep-emoji { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; background: #f7f2e8; font-size: 18px; }
+.meal-prep-copy strong { color: #3c5245; font-size: 10px; }
+.meal-prep-copy p { margin: 3px 0 7px; color: #858f89; font-size: 8px; line-height: 1.45; }
+.meal-prep-copy > div { display: flex; flex-wrap: wrap; gap: 5px; }
+.meal-prep-copy > div span { padding: 4px 6px; border-radius: 999px; background: #f4f4ed; color: #68766d; font-size: 7px; font-weight: 800; }
+.meal-prep-footnote { margin-top: 10px; padding: 9px 10px; border-radius: 11px; background: rgba(255,255,255,.62); color: #8a7d68; font-size: 8px; line-height: 1.45; }
+@media (max-width:760px) {
+  .meal-prep-panel { padding: 15px; border-radius: 20px; }
+  .meal-prep-head { grid-template-columns: 1fr; }
+  .meal-prep-head h2 { font-size: 22px; }
+  .meal-prep-head p { font-size: 10px; }
+  .meal-prep-score { display: flex; justify-content: space-between; align-items: center; text-align: left; }
+  .meal-prep-list article { grid-template-columns: auto 36px minmax(0,1fr); }
+  .meal-prep-check { width: 34px; height: 34px; }
+  .meal-prep-copy strong { font-size: 11px; }
+  .meal-prep-copy p { font-size: 9px; }
+  .meal-prep-footnote { font-size: 9px; }
+}
