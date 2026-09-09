@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNearbyData } from '../context/NearbyDataContext'
 import { geocodePlanLocation } from '../services/forwardGeocode'
-import { searchNearbyPlaces, type NearbyPlace, type NearbyPlaceCategory } from '../services/nearbyPlaces'
+import { searchNearbyPlaces, type NearbyPlace } from '../services/nearbyPlaces'
 import type { BrowserCoordinates } from '../services/browserLocation'
 import type { UserPlanProfile } from '../types'
 import '../nearby.css'
@@ -23,37 +23,24 @@ function cuisineText(value: string) {
   return value.split(';').join(', ')
 }
 
-function categoryEmoji(category: NearbyPlaceCategory) {
-  return category === 'Market' ? '🛒' : '🍽️'
-}
-
 function externalWebsite(value: string) {
   if (/^https?:\/\//i.test(value)) return value
   return `https://${value}`
 }
 
 export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlacesPanelProps) {
-  const { setPlaces: setSharedPlaces, preferredMarket, setPreferredMarket } = useNearbyData()
+  const { setPlaces: setSharedPlaces } = useNearbyData()
   const [status, setStatus] = useState<SearchState>('idle')
   const [places, setPlaces] = useState<NearbyPlace[]>([])
-  const [activeCategory, setActiveCategory] = useState<NearbyPlaceCategory>('Market')
   const [message, setMessage] = useState<string | null>(null)
   const [searchCenter, setSearchCenter] = useState<BrowserCoordinates | undefined>(coords)
-
-  const visiblePlaces = useMemo(
-    () => places.filter((place) => place.category === activeCategory),
-    [places, activeCategory],
-  )
-
-  const marketCount = places.filter((place) => place.category === 'Market').length
-  const restaurantCount = places.filter((place) => place.category === 'Restoran').length
 
   const runSearch = async () => {
     setStatus('loading')
     setMessage(null)
     try {
       let center = coords
-      let sourceText = 'canlı koordinatın'
+      let sourceText = 'canlı konumun'
       if (!center) {
         const geocoded = await geocodePlanLocation(profile.city, profile.district, profile.neighborhood)
         center = geocoded.coords
@@ -62,38 +49,35 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
 
       setSearchCenter(center)
       const result = await searchNearbyPlaces(center, 1800)
-      setPlaces(result)
-      setSharedPlaces(result)
+      const restaurants = result.filter((place) => place.category === 'Restoran')
+      setPlaces(restaurants)
+      setSharedPlaces(restaurants)
       setStatus('success')
-      setMessage(result.length
-        ? `Yaklaşık 1,8 km çevrede ${result.length} isimli işletme bulundu. Arama merkezi ${sourceText} üzerinden belirlendi.`
-        : 'Bu yarıçapta isim bilgisi bulunan market veya restoran bulunamadı. OSM kapsaması bölgeye göre değişebilir.')
+      setMessage(restaurants.length
+        ? `Yaklaşık 1,8 km çevrede ${restaurants.length} restoran bulundu. Arama merkezi ${sourceText} üzerinden belirlendi.`
+        : 'Bu yarıçapta isim bilgisi bulunan restoran bulunamadı. Bölgedeki açık veri kapsamı eksik olabilir.')
     } catch (error) {
       setStatus('error')
-      setMessage(error instanceof Error ? error.message : 'Çevredeki işletmeler aranırken bir sorun oluştu.')
+      setMessage(error instanceof Error ? error.message : 'Restoranlar aranırken bir sorun oluştu.')
     }
-  }
-
-  const chooseMarket = (place: NearbyPlace) => {
-    setPreferredMarket(preferredMarket?.id === place.id ? undefined : place)
   }
 
   return (
     <section className="shell nearby-section">
       <div className="nearby-heading">
         <div>
-          <span className="eyebrow">📍 Nearby v0.3 • zenginleştirilmiş gerçek çevre</span>
-          <h2>Mahallende neler var?</h2>
-          <p>Gerçek işletme adı, türü, mesafesi ve OpenStreetMap kaydında varsa açılış saati, web sitesi, telefon ve servis etiketlerini gösteriyoruz.</p>
+          <span className="eyebrow">📍 Yakındaki restoranlar</span>
+          <h2>Dışarıda veya siparişte nereden yiyebilirsin?</h2>
+          <p>Konumuna göre yakındaki restoranları listeliyoruz. İşletme kaydında varsa mutfak türü, açılış saati, web sitesi, telefon ve servis bilgilerini de gösteriyoruz.</p>
         </div>
         <button type="button" className="nearby-search-button" disabled={status === 'loading'} onClick={runSearch}>
-          {status === 'loading' ? 'Çevre taranıyor…' : status === 'success' ? '↻ Yeniden tara' : '⌖ Çevremi tara'}
+          {status === 'loading' ? 'Restoranlar aranıyor…' : status === 'success' ? '↻ Yeniden ara' : '⌖ Restoranları bul'}
         </button>
       </div>
 
       <div className="nearby-location-strip">
         <span>📌</span>
-        <div><strong>{locationLabel || [profile.neighborhood, profile.district, profile.city].filter(Boolean).join(', ')}</strong><small>{coords ? 'Canlı koordinat üzerinden aramaya hazır' : 'Manuel konum harita noktasına çevrilerek aranacak'}</small></div>
+        <div><strong>{locationLabel || [profile.neighborhood, profile.district, profile.city].filter(Boolean).join(', ')}</strong><small>{coords ? 'Canlı koordinat üzerinden aramaya hazır' : 'Seçtiğin konum harita noktasına çevrilerek aranacak'}</small></div>
         {searchCenter && <code>{searchCenter.latitude.toFixed(5)}, {searchCenter.longitude.toFixed(5)}</code>}
       </div>
 
@@ -101,63 +85,41 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
 
       {status === 'idle' && (
         <div className="nearby-empty-state">
-          <div className="nearby-radar"><span>📍</span><i /><i /><i /></div>
-          <div><strong>Gerçek işletmeleri görmek için çevreni tara.</strong><p>Market, süpermarket, bakkal, manav, restoran, fast-food ve kafeleri yaklaşık 1,8 km yarıçapta arayacağız.</p></div>
+          <div className="nearby-radar"><span>🍽️</span><i /><i /><i /></div>
+          <div><strong>İstersen çevrendeki restoranları bul.</strong><p>Yaklaşık 1,8 km yarıçaptaki restoran, fast-food ve yemek hizmeti veren işletmeleri arayacağız.</p></div>
         </div>
       )}
 
       {status === 'success' && places.length > 0 && (
-        <>
-          <div className="nearby-tabs">
-            <button type="button" className={activeCategory === 'Market' ? 'active' : ''} onClick={() => setActiveCategory('Market')}>🛒 Marketler <b>{marketCount}</b></button>
-            <button type="button" className={activeCategory === 'Restoran' ? 'active' : ''} onClick={() => setActiveCategory('Restoran')}>🍽️ Restoranlar <b>{restaurantCount}</b></button>
-          </div>
-
-          <div className="nearby-grid">
-            {visiblePlaces.map((place, index) => {
-              const marketSelected = preferredMarket?.id === place.id
-              return (
-                <article className={`nearby-place-card ${marketSelected ? 'selected-business' : ''}`} key={place.id}>
-                  <div className="nearby-place-rank">{String(index + 1).padStart(2, '0')}</div>
-                  <div className="nearby-place-icon">{categoryEmoji(place.category)}</div>
-                  <div className="nearby-place-main">
-                    <div className="nearby-place-title"><strong>{place.name}</strong><span>{place.subtype}</span></div>
-                    <p>{place.address || (place.cuisine ? `Mutfak: ${cuisineText(place.cuisine)}` : 'Adres etiketi OpenStreetMap kaydında yok.')}</p>
-                    <div className="nearby-place-meta">
-                      <span>📏 {distanceText(place.distanceMeters)}</span>
-                      {place.cuisine && <span>🍴 {cuisineText(place.cuisine)}</span>}
-                      {place.openingHours && <span title={place.openingHours}>🕒 {place.openingHours}</span>}
-                      {place.delivery === true && <span>🛵 Paket servis</span>}
-                      {place.takeaway === true && <span>🥡 Gel-al</span>}
-                      {place.website && <span>🌐 Web</span>}
-                      {place.phone && <span>☎ Telefon</span>}
-                    </div>
-                  </div>
-                  <div className="nearby-place-actions">
-                    {place.category === 'Market' && (
-                      <button type="button" className={`nearby-select-button ${marketSelected ? 'active' : ''}`} onClick={() => chooseMarket(place)}>
-                        {marketSelected ? '✓ Sepet marketi' : 'Sepet için seç'}
-                      </button>
-                    )}
-                    {place.website && <a className="nearby-map-link" href={externalWebsite(place.website)} target="_blank" rel="noreferrer">Web sitesi ↗</a>}
-                    {place.phone && <a className="nearby-map-link" href={`tel:${place.phone}`}>Ara ☎</a>}
-                    <a className="nearby-map-link" href={`https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`} target="_blank" rel="noreferrer">Haritada aç ↗</a>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        </>
-      )}
-
-      {preferredMarket && (
-        <div className="nearby-selection-note">
-          <span>🛒</span>
-          <div><strong>{preferredMarket.name} sepet marketi olarak seçildi.</strong><p>Market ve mesafe gerçek çevre verisidir. Alışveriş sekmesindeki Fiyat İstihbaratı bölümü, canlı fiyat sağlayıcısı gelene kadar bu gerçek marketler üzerinde açıkça etiketlenmiş simülasyon senaryosu çalıştırır.</p></div>
+        <div className="nearby-grid">
+          {places.map((place, index) => (
+            <article className="nearby-place-card" key={place.id}>
+              <div className="nearby-place-rank">{String(index + 1).padStart(2, '0')}</div>
+              <div className="nearby-place-icon">🍽️</div>
+              <div className="nearby-place-main">
+                <div className="nearby-place-title"><strong>{place.name}</strong><span>{place.subtype}</span></div>
+                <p>{place.address || (place.cuisine ? `Mutfak: ${cuisineText(place.cuisine)}` : 'Adres bilgisi kayıtta bulunmuyor.')}</p>
+                <div className="nearby-place-meta">
+                  <span>📏 {distanceText(place.distanceMeters)}</span>
+                  {place.cuisine && <span>🍴 {cuisineText(place.cuisine)}</span>}
+                  {place.openingHours && <span title={place.openingHours}>🕒 {place.openingHours}</span>}
+                  {place.delivery === true && <span>🛵 Paket servis</span>}
+                  {place.takeaway === true && <span>🥡 Gel-al</span>}
+                  {place.website && <span>🌐 Web</span>}
+                  {place.phone && <span>☎ Telefon</span>}
+                </div>
+              </div>
+              <div className="nearby-place-actions">
+                {place.website && <a className="nearby-map-link" href={externalWebsite(place.website)} target="_blank" rel="noreferrer">Web sitesi ↗</a>}
+                {place.phone && <a className="nearby-map-link" href={`tel:${place.phone}`}>Ara ☎</a>}
+                <a className="nearby-map-link" href={`https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`} target="_blank" rel="noreferrer">Haritada aç ↗</a>
+              </div>
+            </article>
+          ))}
         </div>
       )}
 
-      <div className="nearby-footnote">🗺️ İşletme verisi © OpenStreetMap katkıcıları. OSM kayıtları eksik veya güncel olmayabilir. Mesafe şu an kuş uçuşudur; yürüyüş/sürüş mesafesi rota katmanında hesaplanacak.</div>
+      <div className="nearby-footnote">🗺️ Restoran bilgileri OpenStreetMap kayıtlarından gelir. Kayıtlar eksik veya güncel olmayabilir; mesafe şu an kuş uçuşudur.</div>
     </section>
   )
 }
