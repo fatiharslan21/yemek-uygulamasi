@@ -5,6 +5,7 @@ import { RecipeDetailDrawer } from './RecipeDetailDrawer'
 import { NearbyPlacesPanel } from './NearbyPlacesPanel'
 import { MealBusinessLine } from './MealBusinessLine'
 import { MarketShoppingBridge } from './MarketShoppingBridge'
+import { PriceIntelligencePanel } from './PriceIntelligencePanel'
 import { BrowserLocationError, requestBrowserLocation, type BrowserCoordinates } from '../services/browserLocation'
 import { reverseGeocodeCoordinates, type ResolvedLocation } from '../services/reverseGeocode'
 import type { IngredientDefinition, PlannedMeal, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
@@ -119,14 +120,17 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
       setNotice('Bu öğün kilitli 🔒 Önce kilidi aç, sonra değiştirebilirsin.')
       return
     }
+
     const currentMeal = plan.days[dayIndex]?.meals[mealIndex]
     const nextSwapSeed = swapSeed + 1
     const nextPlan = swapMealInEditedPlan(plan, profile, dayIndex, mealIndex, nextSwapSeed)
     setSwapSeed(nextSwapSeed)
+
     if (nextPlan === plan) {
       setNotice('Bu öğün için filtrelerine uyan başka bir alternatif bulamadım.')
       return
     }
+
     const nextMeal = nextPlan.days[dayIndex]?.meals[mealIndex]
     setPlan(nextPlan)
     setNotice(`${currentMeal?.title ?? 'Öğün'} → ${nextMeal?.title ?? 'yeni alternatif'} olarak değişti. Bütçe ve alışveriş listesi yeniden hesaplandı.`)
@@ -135,6 +139,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
   const shufflePlan = () => {
     const nextSeed = seed + 1
     const freshPlan = generateWeeklyPlan(profile, nextSeed)
+
     if (lockedMeals.size === 0) {
       setPlan(freshPlan)
     } else {
@@ -144,11 +149,13 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
           ? (plan.days[dayIndex]?.meals[mealIndex] ?? meal)
           : meal),
       }))
+
       setPlan(rebuildEditedPlan(profile, mergedDays, {
         adjustedForBudget: freshPlan.adjustedForBudget,
         convertedOutsideMeals: freshPlan.convertedOutsideMeals,
       }))
     }
+
     setSeed(nextSeed)
     setNotice(lockedMeals.size > 0
       ? `Hafta yeniden oluşturuldu; ${lockedMeals.size} kilitli öğün aynen korundu.`
@@ -194,7 +201,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 
       <section className="dashboard-hero shell plan-engine-hero">
         <div>
-          <span className="hero-badge">🧠 Plan motoru v1.5 çalışıyor</span>
+          <span className="hero-badge">🧠 Plan motoru v1.6 çalışıyor</span>
           <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
           <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {readableTitle}</p>
           <div className="engine-status-row">
@@ -251,14 +258,24 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
         <div><span>🛒 Market paketleri</span><strong>{money(plan.marketCost)} ₺</strong></div><span className="split-plus">+</span>
         <div><span>🛵 Sipariş / dışarı</span><strong>{money(plan.outsideCost)} ₺</strong></div><span className="split-equals">=</span>
         <div className="split-total"><span>Haftalık tahmin</span><strong>{money(plan.totalCost)} ₺</strong></div>
-        <small>Bir öğünü değiştirdiğinde bu rakamlar ve alışveriş listesi anında yeniden hesaplanır. Fiyatlar şimdilik demo katalog fiyatlarıdır.</small>
+        <small>Bir öğünü değiştirdiğinde bu rakamlar ve alışveriş listesi anında yeniden hesaplanır. Market karşılaştırma bölümündeki fiyatlar ayrıca kaynağıyla etiketlenir.</small>
       </section>
 
       {tab === 'week'
         ? <WeekView profile={profile} plan={plan} lockedMeals={lockedMeals} onSwap={swapMeal} onToggleLock={toggleMealLock} onOpenDetail={(dayIndex, mealIndex) => setSelectedMeal({ dayIndex, mealIndex })} onShopping={() => setTab('shopping')} />
         : <ShoppingView groups={shoppingGroups} plan={plan} onWeek={() => setTab('week')} />}
 
-      {selectedMeal && selectedMealValue && <RecipeDetailDrawer meal={selectedMealValue} profile={profile} plan={plan} locked={selectedMealLocked} onClose={() => setSelectedMeal(null)} onSwap={() => swapMeal(selectedMeal.dayIndex, selectedMeal.mealIndex)} onToggleLock={() => toggleMealLock(selectedMeal.dayIndex, selectedMeal.mealIndex)} />}
+      {selectedMeal && selectedMealValue && (
+        <RecipeDetailDrawer
+          meal={selectedMealValue}
+          profile={profile}
+          plan={plan}
+          locked={selectedMealLocked}
+          onClose={() => setSelectedMeal(null)}
+          onSwap={() => swapMeal(selectedMeal.dayIndex, selectedMeal.mealIndex)}
+          onToggleLock={() => toggleMealLock(selectedMeal.dayIndex, selectedMeal.mealIndex)}
+        />
+      )}
     </main>
   )
 }
@@ -289,13 +306,25 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDeta
             return (
               <article className="engine-day-card" key={day.index}>
                 <div className="engine-day-header"><div><span className="day-number">{String(day.index + 1).padStart(2, '0')}</span><div><h3>{day.name}</h3><small>≈ {money(day.totalEstimatedPrice)} ₺ marjinal öğün değeri</small></div></div><span className="day-goal-chip">{day.index === 0 ? 'Başlangıç' : day.index === plan.days.length - 1 ? 'Hafta sonu' : 'Dengeli gün'}</span></div>
-                <div className="engine-meal-list">{day.meals.map((meal, mealIndex) => <MealRow key={meal.id} meal={meal} locked={lockedMeals.has(mealKey(day.index, mealIndex))} onDetail={() => onOpenDetail(day.index, mealIndex)} onSwap={() => onSwap(day.index, mealIndex)} onToggleLock={() => onToggleLock(day.index, mealIndex)} />)}</div>
+                <div className="engine-meal-list">
+                  {day.meals.map((meal, mealIndex) => (
+                    <MealRow
+                      key={meal.id}
+                      meal={meal}
+                      locked={lockedMeals.has(mealKey(day.index, mealIndex))}
+                      onDetail={() => onOpenDetail(day.index, mealIndex)}
+                      onSwap={() => onSwap(day.index, mealIndex)}
+                      onToggleLock={() => onToggleLock(day.index, mealIndex)}
+                    />
+                  ))}
+                </div>
                 <div className="day-targets"><div><span>🔥 {day.totalCalories} / {plan.nutritionTargets.calories} kcal</span><div><i style={{ width: `${Math.min(100, caloriePct)}%` }} /></div></div><div><span>💪 {day.totalProtein} / {plan.nutritionTargets.protein} g</span><div><i style={{ width: `${Math.min(100, proteinPct)}%` }} /></div></div></div>
               </article>
             )
           })}
         </div>
       </section>
+
       <section className="reuse-insight shell">
         <div className="reuse-insight-copy"><span className="step-kicker">♻️ Lokma'nın maliyet numarası</span><h2>{plan.reusedIngredientCount} malzemeyi haftada birden fazla öğünde kullanıyoruz.</h2><p>Alışverişi tarif tarif değil, haftanın tamamı üzerinden topluyoruz. Öğün değiştirdiğinde bu zincir de tekrar hesaplanıyor.</p><div className="reuse-stats"><span><b>%{plan.reuseScore}</b> tekrar kullanım</span><span><b>≈ {money(plan.estimatedWasteSaving)} ₺</b> paket avantajı</span><span><b>{profile.people} kişi</b> için miktarlandı</span></div></div>
         <button type="button" onClick={onShopping}>Alışveriş listesini aç <span>→</span></button>
@@ -304,7 +333,13 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDeta
   )
 }
 
-type MealRowProps = { meal: PlannedMeal; locked: boolean; onDetail: () => void; onSwap: () => void; onToggleLock: () => void }
+type MealRowProps = {
+  meal: PlannedMeal
+  locked: boolean
+  onDetail: () => void
+  onSwap: () => void
+  onToggleLock: () => void
+}
 
 function MealRow({ meal, locked, onDetail, onSwap, onToggleLock }: MealRowProps) {
   return (
@@ -321,18 +356,41 @@ function MealRow({ meal, locked, onDetail, onSwap, onToggleLock }: MealRowProps)
   )
 }
 
-type ShoppingViewProps = { groups: Array<{ category: IngredientDefinition['category']; items: ShoppingListItem[] }>; plan: WeeklyPlan; onWeek: () => void }
+type ShoppingViewProps = {
+  groups: Array<{ category: IngredientDefinition['category']; items: ShoppingListItem[] }>
+  plan: WeeklyPlan
+  onWeek: () => void
+}
 
 function ShoppingView({ groups, plan, onWeek }: ShoppingViewProps) {
   return (
     <section className="shopping-page-section shell">
       <div className="section-title-row shopping-title-row"><div><span className="eyebrow">🛒 Canlı güncellenen paket listesi</span><h2>Öğün değiştiyse sepet de değişti.</h2><p>İhtiyaç miktarını markette satılan paket boyuna yuvarlıyoruz. Bir tarifi değiştirdiğinde malzemeler burada anında yeniden hesaplanıyor.</p></div><button className="shopping-jump-button" type="button" onClick={onWeek}>← Haftaya dön</button></div>
-      <div className="shopping-overview-grid"><article><span>🛍️ Toplam ürün</span><strong>{plan.shoppingList.length}</strong><small>farklı market kalemi</small></article><article><span>💸 Market tahmini</span><strong>{money(plan.marketCost)} ₺</strong><small>paket fiyatları üzerinden</small></article><article><span>♻️ Tekrar kullanılan</span><strong>{plan.reusedIngredientCount}</strong><small>birden fazla öğünde</small></article><article><span>✨ Paket avantajı</span><strong>≈ {money(plan.estimatedWasteSaving)} ₺</strong><small>tahmini</small></article></div>
+
+      <div className="shopping-overview-grid"><article><span>🛍️ Toplam ürün</span><strong>{plan.shoppingList.length}</strong><small>farklı market kalemi</small></article><article><span>💸 Katalog market tahmini</span><strong>{money(plan.marketCost)} ₺</strong><small>paket fiyatları üzerinden</small></article><article><span>♻️ Tekrar kullanılan</span><strong>{plan.reusedIngredientCount}</strong><small>birden fazla öğünde</small></article><article><span>✨ Paket avantajı</span><strong>≈ {money(plan.estimatedWasteSaving)} ₺</strong><small>tahmini</small></article></div>
+
       <MarketShoppingBridge />
+      <PriceIntelligencePanel shoppingList={plan.shoppingList} catalogTotal={plan.marketCost} />
+
       <div className="shopping-groups">
-        {groups.map((group) => <section className="shopping-group" key={group.category}><div className="shopping-group-heading"><h3>{group.category}</h3><span>{group.items.length} ürün</span></div><div className="shopping-item-list">{group.items.map((item) => <article className="shopping-item" key={item.ingredientId}><div className="shopping-item-emoji">{item.emoji}</div><div className="shopping-item-main"><strong>{item.name}</strong><small>İhtiyaç: {quantityText(item)}</small></div><div className="shopping-package"><span>{item.packages} × {item.packageLabel}</span><strong>{money(item.estimatedCost)} ₺</strong></div><div className={`reuse-badge ${item.usedInMeals >= 2 ? 'is-reused' : ''}`}>{item.usedInMeals >= 2 ? `♻️ ${item.usedInMeals} öğünde` : '1 öğünde'}</div></article>)}</div></section>)}
+        {groups.map((group) => (
+          <section className="shopping-group" key={group.category}>
+            <div className="shopping-group-heading"><h3>{group.category}</h3><span>{group.items.length} ürün</span></div>
+            <div className="shopping-item-list">
+              {group.items.map((item) => (
+                <article className="shopping-item" key={item.ingredientId}>
+                  <div className="shopping-item-emoji">{item.emoji}</div>
+                  <div className="shopping-item-main"><strong>{item.name}</strong><small>İhtiyaç: {quantityText(item)}</small></div>
+                  <div className="shopping-package"><span>{item.packages} × {item.packageLabel}</span><strong>{money(item.estimatedCost)} ₺</strong></div>
+                  <div className={`reuse-badge ${item.usedInMeals >= 2 ? 'is-reused' : ''}`}>{item.usedInMeals >= 2 ? `♻️ ${item.usedInMeals} öğünde` : '1 öğünde'}</div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
-      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>İşletme gerçek, fiyat henüz demo.</strong> Sepeti artık gerçek bir yakın markete bağlayabiliyoruz; ürün bazlı stok ve gerçek şube fiyatı sonraki veri entegrasyonunda gelecek.</p></div>
+
+      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Gerçek ile simülasyonu ayırıyoruz.</strong> Market adı/mesafesi gerçek Nearby verisi; fiyat istihbaratı bölümündeki rakamlar canlı sağlayıcı bağlanana kadar simülasyondur. Katalog ürün fiyatları da planlama amaçlı demo veridir.</p></div>
     </section>
   )
 }
