@@ -1,0 +1,47 @@
+.plan-editor-notice {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(47,112,84,.14);
+  border-radius: 17px;
+  background: rgba(241,247,225,.9);
+  box-shadow: 0 10px 26px rgba(47,112,84,.06);
+  animation: editorNoticeIn .24s ease;
+}
+.plan-editor-notice > span { font-size: 18px; }
+.plan-editor-notice p { margin: 0; color: #58665c; font-size: 10px; font-weight: 700; line-height: 1.5; }
+.plan-editor-notice button { width: 28px; height: 28px; border: 0; border-radius: 10px; background: rgba(255,255,255,.8); color: #758079; font-size: 17px; }
+.locked-status { background: #fff3d8 !important; color: #745b25 !important; }
+.meal-editor-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 4px; }
+.meal-editor-guide span { border: 1px dashed rgba(47,112,84,.18); border-radius: 15px; background: rgba(255,255,255,.48); padding: 10px 12px; color: #748078; font-size: 9px; line-height: 1.5; }
+.meal-editor-guide b { color: var(--green); }
+.editable-meal-row { grid-template-columns: 68px 48px minmax(0,1fr) minmax(150px,auto); transition: background .18s ease, opacity .18s ease; }
+.editable-meal-row:hover { background: rgba(248,250,241,.78); }
+.editable-meal-row.is-locked { background: linear-gradient(90deg,rgba(255,247,226,.72),rgba(255,255,255,.78)); }
+.meal-locked-chip { display: inline-flex; align-items: center; padding: 4px 7px; border-radius: 999px; background: #fff1cc; color: #795f22; font-size: 8px; font-weight: 900; }
+.meal-editor-side { display: grid; justify-items: end; gap: 8px; min-width: 148px; }
+.meal-editor-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.meal-editor-actions button { border: 1px solid var(--line); border-radius: 10px; padding: 7px 8px; font-size: 8px; font-weight: 900; transition: .16s ease; white-space: nowrap; }
+.meal-swap-button { background: #eef5df; color: #3d6b4e; }
+.meal-swap-button:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(47,112,84,.3); background: #e6f0d0; }
+.meal-swap-button:disabled { cursor: not-allowed; opacity: .42; }
+.meal-lock-button { background: #fff; color: #737d76; }
+.meal-lock-button:hover { transform: translateY(-1px); border-color: rgba(126,99,37,.25); }
+.meal-lock-button.active { background: #fff1cc; color: #765c22; border-color: rgba(126,99,37,.2); }
+@keyframes editorNoticeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 760px) {
+  .meal-editor-guide { grid-template-columns: 1fr; }
+  .editable-meal-row { grid-template-columns: 44px minmax(0,1fr); align-items: start; padding: 14px; }
+  .editable-meal-row .meal-slot { grid-column: 1 / -1; }
+  .editable-meal-row .engine-meal-emoji { grid-column: 1; }
+  .editable-meal-row .engine-meal-main { grid-column: 2; }
+  .meal-editor-side { grid-column: 1 / -1; width: 100%; min-width: 0; justify-items: stretch; margin-top: 4px; }
+  .meal-editor-side .meal-tags { display: flex; justify-content: flex-start; flex-wrap: wrap; }
+  .meal-editor-actions { justify-content: stretch; }
+  .meal-editor-actions button { flex: 1; padding: 9px; }
+}
