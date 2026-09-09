@@ -41,6 +41,14 @@ export async function signOutCloud() {
   if (error) throw error
 }
 
+export async function deleteCloudAccount() {
+  if (!cloudClient) throw new Error('Bulut bağlantısı henüz yapılandırılmadı.')
+  const { data, error } = await cloudClient.functions.invoke('delete-account')
+  if (error) throw error
+  if (!data?.deleted) throw new Error(data?.error ?? 'Hesap silme işlemi tamamlanamadı.')
+  await cloudClient.auth.signOut({ scope: 'local' })
+}
+
 export function subscribeCloudAuth(callback: (user: User | null) => void) {
   if (!cloudClient) return () => undefined
   const { data } = cloudClient.auth.onAuthStateChange((_event, session) => callback(session?.user ?? null))
