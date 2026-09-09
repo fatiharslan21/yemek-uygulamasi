@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { generateWeeklyPlan } from '../engine/planEngine'
 import { rebuildEditedPlan, swapMealInEditedPlan } from '../engine/planEditor'
 import { RecipeDetailDrawer } from './RecipeDetailDrawer'
+import { NearbyPlacesPanel } from './NearbyPlacesPanel'
 import { BrowserLocationError, requestBrowserLocation, type BrowserCoordinates } from '../services/browserLocation'
 import { reverseGeocodeCoordinates, type ResolvedLocation } from '../services/reverseGeocode'
 import type { IngredientDefinition, PlannedMeal, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
@@ -161,7 +162,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
           status: 'success',
           coords,
           resolved,
-          message: 'Canlı konum adres bilgisine çevrildi. Yakındaki işletmeler fazında bu nokta kullanılacak.',
+          message: 'Canlı konum adres bilgisine çevrildi. Nearby taraması bu noktayı kullanabilir.',
         })
       } catch {
         setLocationStatus({
@@ -172,9 +173,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
         })
       }
     } catch (error) {
-      const message = error instanceof BrowserLocationError
-        ? error.message
-        : 'Konum alınırken beklenmeyen bir sorun oluştu.'
+      const message = error instanceof BrowserLocationError ? error.message : 'Konum alınırken beklenmeyen bir sorun oluştu.'
       setLocationStatus({ status: 'error', message })
     }
   }
@@ -192,13 +191,14 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 
       <section className="dashboard-hero shell plan-engine-hero">
         <div>
-          <span className="hero-badge">🧠 Plan motoru v1.3 çalışıyor</span>
+          <span className="hero-badge">🧠 Plan motoru v1.4 çalışıyor</span>
           <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
           <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {readableTitle}</p>
           <div className="engine-status-row">
             <span>🎯 ≈ {plan.nutritionTargets.calories} kcal hedef</span>
             <span>💪 ≈ {plan.nutritionTargets.protein} g protein</span>
             <span>♻️ %{plan.reuseScore} malzeme yeniden kullanım</span>
+            <span>👨‍🍳 {profile.cookingEquipment.length} mutfak ekipmanı</span>
             {lockedMeals.size > 0 && <span className="locked-status">🔒 {lockedMeals.size} öğün sabit</span>}
           </div>
         </div>
@@ -218,14 +218,14 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
             <span><small>İlçe</small>{readableLocation.district || '—'}</span>
             <span><small>Mahalle</small>{readableLocation.neighborhood || '—'}</span>
           </div>
-          {locationStatus.coords && (
-            <span className="location-coordinate">{locationStatus.coords.latitude.toFixed(5)}, {locationStatus.coords.longitude.toFixed(5)} • ±{Math.round(locationStatus.coords.accuracy)} m</span>
-          )}
+          {locationStatus.coords && <span className="location-coordinate">{locationStatus.coords.latitude.toFixed(5)}, {locationStatus.coords.longitude.toFixed(5)} • ±{Math.round(locationStatus.coords.accuracy)} m</span>}
         </div>
         <button type="button" className="location-bridge-action" disabled={locationStatus.status === 'loading'} onClick={useLiveLocation}>
           {locationStatus.status === 'loading' ? 'Konum alınıyor…' : locationStatus.status === 'success' ? 'Canlı konumu yenile' : 'Canlı konumu kullan'}
         </button>
       </section>
+
+      <NearbyPlacesPanel profile={profile} coords={locationStatus.coords} locationLabel={readableTitle} />
 
       {notice && <section className="shell plan-editor-notice" role="status"><span>✨</span><p>{notice}</p><button type="button" onClick={() => setNotice(null)} aria-label="Bildirimi kapat">×</button></section>}
 
@@ -255,9 +255,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
         ? <WeekView profile={profile} plan={plan} lockedMeals={lockedMeals} onSwap={swapMeal} onToggleLock={toggleMealLock} onOpenDetail={(dayIndex, mealIndex) => setSelectedMeal({ dayIndex, mealIndex })} onShopping={() => setTab('shopping')} />
         : <ShoppingView groups={shoppingGroups} plan={plan} onWeek={() => setTab('week')} />}
 
-      {selectedMeal && selectedMealValue && (
-        <RecipeDetailDrawer meal={selectedMealValue} profile={profile} plan={plan} locked={selectedMealLocked} onClose={() => setSelectedMeal(null)} onSwap={() => swapMeal(selectedMeal.dayIndex, selectedMeal.mealIndex)} onToggleLock={() => toggleMealLock(selectedMeal.dayIndex, selectedMeal.mealIndex)} />
-      )}
+      {selectedMeal && selectedMealValue && <RecipeDetailDrawer meal={selectedMealValue} profile={profile} plan={plan} locked={selectedMealLocked} onClose={() => setSelectedMeal(null)} onSwap={() => swapMeal(selectedMeal.dayIndex, selectedMeal.mealIndex)} onToggleLock={() => toggleMealLock(selectedMeal.dayIndex, selectedMeal.mealIndex)} />}
     </main>
   )
 }
@@ -277,10 +275,10 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDeta
     <>
       <section className="week-section shell engine-week-section">
         <div className="section-title-row">
-          <div><span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span><h2>Gün gün yemek planın</h2><p>Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açıp Lokma'nın neden seçtiğini görebilirsin.</p></div>
+          <div><span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span><h2>Gün gün yemek planın</h2><p>Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açıp Lokma'nın neden seçtiğini ve nasıl pişireceğini görebilirsin.</p></div>
           <button className="shopping-jump-button" type="button" onClick={onShopping}>🛒 Listeye geç →</button>
         </div>
-        <div className="meal-editor-guide"><span><b>👁 Detay</b> malzeme, hazırlama ve seçim nedenini gösterir.</span><span><b>↻ Değiştir</b> yeni alternatif bulur.</span><span><b>🔒 Sabitle</b> sonraki karıştırmalarda korur.</span></div>
+        <div className="meal-editor-guide"><span><b>👁 Detay</b> malzeme + Ocak/Fırın/Airfryer seçeneklerini gösterir.</span><span><b>↻ Değiştir</b> yeni alternatif bulur.</span><span><b>🔒 Sabitle</b> sonraki karıştırmalarda korur.</span></div>
         <div className="engine-day-grid">
           {plan.days.map((day) => {
             const caloriePct = Math.round(day.totalCalories / Math.max(1, plan.nutritionTargets.calories) * 100)
@@ -288,9 +286,7 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDeta
             return (
               <article className="engine-day-card" key={day.index}>
                 <div className="engine-day-header"><div><span className="day-number">{String(day.index + 1).padStart(2, '0')}</span><div><h3>{day.name}</h3><small>≈ {money(day.totalEstimatedPrice)} ₺ marjinal öğün değeri</small></div></div><span className="day-goal-chip">{day.index === 0 ? 'Başlangıç' : day.index === plan.days.length - 1 ? 'Hafta sonu' : 'Dengeli gün'}</span></div>
-                <div className="engine-meal-list">
-                  {day.meals.map((meal, mealIndex) => <MealRow key={meal.id} meal={meal} locked={lockedMeals.has(mealKey(day.index, mealIndex))} onDetail={() => onOpenDetail(day.index, mealIndex)} onSwap={() => onSwap(day.index, mealIndex)} onToggleLock={() => onToggleLock(day.index, mealIndex)} />)}
-                </div>
+                <div className="engine-meal-list">{day.meals.map((meal, mealIndex) => <MealRow key={meal.id} meal={meal} locked={lockedMeals.has(mealKey(day.index, mealIndex))} onDetail={() => onOpenDetail(day.index, mealIndex)} onSwap={() => onSwap(day.index, mealIndex)} onToggleLock={() => onToggleLock(day.index, mealIndex)} />)}</div>
                 <div className="day-targets"><div><span>🔥 {day.totalCalories} / {plan.nutritionTargets.calories} kcal</span><div><i style={{ width: `${Math.min(100, caloriePct)}%` }} /></div></div><div><span>💪 {day.totalProtein} / {plan.nutritionTargets.protein} g</span><div><i style={{ width: `${Math.min(100, proteinPct)}%` }} /></div></div></div>
               </article>
             )
@@ -327,7 +323,7 @@ function ShoppingView({ groups, plan, onWeek }: ShoppingViewProps) {
       <div className="shopping-groups">
         {groups.map((group) => <section className="shopping-group" key={group.category}><div className="shopping-group-heading"><h3>{group.category}</h3><span>{group.items.length} ürün</span></div><div className="shopping-item-list">{group.items.map((item) => <article className="shopping-item" key={item.ingredientId}><div className="shopping-item-emoji">{item.emoji}</div><div className="shopping-item-main"><strong>{item.name}</strong><small>İhtiyaç: {quantityText(item)}</small></div><div className="shopping-package"><span>{item.packages} × {item.packageLabel}</span><strong>{money(item.estimatedCost)} ₺</strong></div><div className={`reuse-badge ${item.usedInMeals >= 2 ? 'is-reused' : ''}`}>{item.usedInMeals >= 2 ? `♻️ ${item.usedInMeals} öğünde` : '1 öğünde'}</div></article>)}</div></section>)}
       </div>
-      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Şimdilik demo fiyat.</strong> Konum artık İl / İlçe / Mahalle ve koordinat olarak hazır. Sıradaki Nearby fazında bu sepetin yanına gerçek market, restoran ve mesafe bilgisi bağlanacak.</p></div>
+      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Şimdilik demo fiyat.</strong> Yakındaki gerçek işletmeleri artık yukarıdaki Nearby bölümünde görebilirsin. Sıradaki veri katmanında bu sepeti gerçek market ürün/fiyat verisiyle eşleştireceğiz.</p></div>
     </section>
   )
 }
