@@ -37,24 +37,20 @@ export function loadShoppingChecklist(signature: string): ShoppingChecklistState
       }
     }
 
-    // v1'de yalnızca "evde var" bilgisi vardı. Eski işaretleri mevcut ihtiyacın tamamı evdeymiş gibi taşıyoruz.
+    // v1 yalnızca "evde var" bilgisini tutuyordu; miktarı bilinmediği için stok miktarı uydurmuyoruz.
+    // Sadece kesin olan "aldım" işaretlerini taşıyoruz ve eski kaydı yeni formata bir kez dönüştürüyoruz.
     const legacyRaw = window.localStorage.getItem(`${LEGACY_STORAGE_PREFIX}${signature}`)
     if (!legacyRaw) return { pantryQuantities: {}, purchasedIngredientIds: [] }
 
-    const legacy = JSON.parse(legacyRaw) as {
-      pantryIngredientIds?: string[]
-      purchasedIngredientIds?: string[]
-    }
-    return {
-      pantryQuantities: Object.fromEntries(
-        (Array.isArray(legacy.pantryIngredientIds) ? legacy.pantryIngredientIds : [])
-          .filter((item): item is string => typeof item === 'string')
-          .map((id) => [id, Number.MAX_SAFE_INTEGER]),
-      ),
+    const legacy = JSON.parse(legacyRaw) as { purchasedIngredientIds?: string[] }
+    const migrated: ShoppingChecklistState = {
+      pantryQuantities: {},
       purchasedIngredientIds: Array.isArray(legacy.purchasedIngredientIds)
         ? legacy.purchasedIngredientIds.filter((item): item is string => typeof item === 'string')
         : [],
     }
+    window.localStorage.setItem(`${STORAGE_PREFIX}${signature}`, JSON.stringify(migrated))
+    return migrated
   } catch {
     return { pantryQuantities: {}, purchasedIngredientIds: [] }
   }
