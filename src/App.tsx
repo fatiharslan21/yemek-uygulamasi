@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PlanHistoryPanel } from './components/PlanHistoryPanel'
 import { PlanLocationGate } from './components/PlanLocationGate'
+import { ProfileHub } from './components/ProfileHub'
 import { StarterPlanDashboard } from './components/StarterPlanDashboard'
+import { clearAppPreferences, loadAppPreferences } from './services/appPreferences'
 import { clearAppState, loadSavedAppState, saveAppState } from './services/appStorage'
 import { clearFavoriteRecipeIds } from './services/favoritesStorage'
 import { clearPlanHistory } from './services/planHistoryStorage'
@@ -38,13 +40,23 @@ const initialProfile: UserPlanProfile = {
   locationSource: 'manual',
 }
 
-type Screen = 'about' | 'location' | 'onboarding' | 'dashboard'
+type Screen = 'about' | 'location' | 'onboarding' | 'dashboard' | 'profile'
 
 function App() {
   const savedState = loadSavedAppState()
   const [profile, setProfile] = useState<UserPlanProfile>(() => savedState?.profile ?? initialProfile)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => Boolean(savedState?.onboardingCompleted))
   const [screen, setScreen] = useState<Screen>(() => savedState?.onboardingCompleted ? 'dashboard' : 'location')
+
+  useEffect(() => {
+    const applyPreferences = () => {
+      const preferences = loadAppPreferences()
+      document.body.classList.toggle('lokma-reduced-motion', preferences.reducedMotion)
+    }
+    applyPreferences()
+    window.addEventListener('lokma:preferences-changed', applyPreferences)
+    return () => window.removeEventListener('lokma:preferences-changed', applyPreferences)
+  }, [])
 
   const goTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
@@ -67,8 +79,13 @@ function App() {
     goTop()
   }
 
-  const editProfile = () => {
+  const editPreferences = () => {
     setScreen('onboarding')
+    goTop()
+  }
+
+  const openProfile = () => {
+    setScreen('profile')
     goTop()
   }
 
@@ -82,6 +99,8 @@ function App() {
     clearPlanSession()
     clearFavoriteRecipeIds()
     clearPlanHistory()
+    clearAppPreferences()
+    document.body.classList.remove('lokma-reduced-motion')
     setProfile(initialProfile)
     setHasCompletedOnboarding(false)
     setScreen('location')
@@ -96,8 +115,12 @@ function App() {
     return <OnboardingFlow initialProfile={profile} onComplete={completeOnboarding} onExit={returnFromFlow} />
   }
 
+  if (screen === 'profile') {
+    return <ProfileHub profile={profile} onBack={() => setScreen('dashboard')} onEditPreferences={editPreferences} onAbout={() => setScreen('about')} onResetAll={resetLocalApp} />
+  }
+
   if (screen === 'dashboard') {
-    return <StarterPlanDashboard profile={profile} onEdit={editProfile} onHome={() => setScreen('about')} />
+    return <StarterPlanDashboard profile={profile} onEdit={openProfile} onHome={() => setScreen('about')} />
   }
 
   return (
