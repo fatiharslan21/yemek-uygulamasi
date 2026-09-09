@@ -12,7 +12,7 @@ type PlannerCardProps = {
 }
 
 export function PlannerCard({ state, onChange, onGenerate }: PlannerCardProps) {
-  const patch = <K extends keyof PlannerState>(key: K, value: PlannerState[K]) => {
+  const patch = <K extends keyof PlannerState,>(key: K, value: PlannerState[K]) => {
     onChange({ ...state, [key]: value })
   }
 
