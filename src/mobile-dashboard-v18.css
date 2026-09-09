@@ -1,0 +1,10 @@
+@media (max-width:760px) {
+  .dashboard-nav .dashboard-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .dashboard-tabs .dashboard-nav-button, .dashboard-tabs .profile-pill { font-size: 9px; padding-left: 4px; padding-right: 4px; }
+  .dashboard-tabs .profile-pill { overflow: hidden; text-overflow: ellipsis; }
+  .dashboard-tab-today .dashboard-nav { margin-bottom: 0; }
+  .dashboard-tab-today .plan-editor-notice { margin-top: 8px; margin-bottom: 4px; }
+}
+
+.engine-day-card.is-today { border-color: rgba(56,112,72,.28); box-shadow: 0 16px 44px rgba(53,95,65,.09); }
+.engine-day-card.is-today .day-goal-chip { background: #3f704e; color: #fff; }
