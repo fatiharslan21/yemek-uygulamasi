@@ -64,27 +64,31 @@ export function buildMealPrepTasks(
       })
     })
 
-  return [...totals.entries()]
-    .map(([ingredientId, total]) => {
-      const definition = INGREDIENT_BY_ID[ingredientId]
-      if (!definition || total.meals.length < 2) return null
-      const action = actionForCategory(definition.category)
-      const mealBonus = Math.max(0, total.meals.length - 2) * 2
-      return {
-        id: `prep-${ingredientId}`,
-        ingredientId,
-        emoji: definition.emoji,
-        title: `${definition.name}: ${action.action}`,
-        detail: `${total.meals.length} öğünde kullanılacak. Tek seferde hazırlayıp porsiyonlara ayırabilirsin.`,
-        quantity: Math.round(total.quantity),
-        unit: definition.unit,
-        usedInMeals: total.meals.length,
-        minutes: action.minutes + mealBonus,
-        equipment: preferredEquipment(profile, definition.category),
-        mealNames: total.meals,
-      } satisfies MealPrepTask
-    })
-    .filter((task): task is MealPrepTask => Boolean(task))
+  const tasks = [...totals.entries()].reduce<MealPrepTask[]>((result, [ingredientId, total]) => {
+    const definition = INGREDIENT_BY_ID[ingredientId]
+    if (!definition || total.meals.length < 2) return result
+
+    const action = actionForCategory(definition.category)
+    const mealBonus = Math.max(0, total.meals.length - 2) * 2
+    const equipment = preferredEquipment(profile, definition.category)
+    const task: MealPrepTask = {
+      id: `prep-${ingredientId}`,
+      ingredientId,
+      emoji: definition.emoji,
+      title: `${definition.name}: ${action.action}`,
+      detail: `${total.meals.length} öğünde kullanılacak. Tek seferde hazırlayıp porsiyonlara ayırabilirsin.`,
+      quantity: Math.round(total.quantity),
+      unit: definition.unit,
+      usedInMeals: total.meals.length,
+      minutes: action.minutes + mealBonus,
+      mealNames: total.meals,
+      ...(equipment ? { equipment } : {}),
+    }
+    result.push(task)
+    return result
+  }, [])
+
+  return tasks
     .sort((left, right) => {
       if (left.usedInMeals !== right.usedInMeals) return right.usedInMeals - left.usedInMeals
       return right.minutes - left.minutes
