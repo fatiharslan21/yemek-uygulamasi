@@ -15,7 +15,7 @@ function formatDate(value: string) {
 export function WeightTracker({ startingWeight }: { startingWeight: number }) {
   const [entries, setEntries] = useState<WeightEntry[]>(() => loadWeightHistory())
   const [date, setDate] = useState(todayKey())
-  const [weight, setWeight] = useState(String(entries.at(-1)?.weight ?? startingWeight))
+  const [weight, setWeight] = useState(String(entries.length ? entries[entries.length - 1].weight : startingWeight))
   const parsedWeight = Number(weight.replace(',', '.'))
 
   const stats = useMemo(() => {
