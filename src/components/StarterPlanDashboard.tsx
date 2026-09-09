@@ -6,9 +6,12 @@ import { NearbyPlacesPanel } from './NearbyPlacesPanel'
 import { MealBusinessLine } from './MealBusinessLine'
 import { MarketShoppingBridge } from './MarketShoppingBridge'
 import { PriceIntelligencePanel } from './PriceIntelligencePanel'
+import { TodayView } from './TodayView'
 import { BrowserLocationError, requestBrowserLocation, type BrowserCoordinates } from '../services/browserLocation'
 import { reverseGeocodeCoordinates, type ResolvedLocation } from '../services/reverseGeocode'
-import { loadPlanSession, savePlanSession } from '../services/planSessionStorage'
+import { loadPlanSession, savePlanSession, type DashboardTab, type MealActivityStatus } from '../services/planSessionStorage'
+import { formatPlanDate, localDateKey, planDayIndex } from '../services/planCalendar'
+import { loadFavoriteRecipeIds, saveFavoriteRecipeIds } from '../services/favoritesStorage'
 import type { IngredientDefinition, PlannedMeal, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
 import '../plan-engine.css'
 import '../meal-editor.css'
@@ -22,7 +25,6 @@ type StarterPlanDashboardProps = {
   onHome: () => void
 }
 
-type DashboardTab = 'week' | 'shopping'
 type SelectedMeal = { dayIndex: number; mealIndex: number }
 type ReadableLocation = Pick<ResolvedLocation, 'city' | 'district' | 'neighborhood'>
 type LocationStatus = {
@@ -64,9 +66,12 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
   const [initialSession] = useState(() => loadPlanSession(profile))
   const [seed, setSeed] = useState(() => initialSession?.seed ?? 1)
   const [swapSeed, setSwapSeed] = useState(() => initialSession?.swapSeed ?? 10)
-  const [tab, setTab] = useState<DashboardTab>(() => initialSession?.tab ?? 'week')
+  const [tab, setTab] = useState<DashboardTab>(() => initialSession?.tab ?? 'today')
+  const [planStartedAt, setPlanStartedAt] = useState(() => initialSession?.startedAt ?? localDateKey())
   const [plan, setPlan] = useState<WeeklyPlan>(() => initialSession?.plan ?? generateWeeklyPlan(profile, 1))
   const [lockedMeals, setLockedMeals] = useState<Set<string>>(() => new Set(initialSession?.lockedMealKeys ?? []))
+  const [mealStatuses, setMealStatuses] = useState<Record<string, MealActivityStatus>>(() => initialSession?.mealStatuses ?? {})
+  const [favoriteRecipeIds, setFavoriteRecipeIds] = useState<Set<string>>(() => loadFavoriteRecipeIds())
   const [notice, setNotice] = useState<string | null>(() => initialSession ? 'Son planın bu cihazdan geri yüklendi. 💚' : null)
   const [selectedMeal, setSelectedMeal] = useState<SelectedMeal | null>(null)
   const [locationStatus, setLocationStatus] = useState<LocationStatus>(() => {
@@ -86,8 +91,12 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
   })
 
   useEffect(() => {
-    savePlanSession(profile, plan, [...lockedMeals], seed, swapSeed, tab)
-  }, [profile, plan, lockedMeals, seed, swapSeed, tab])
+    savePlanSession(profile, plan, [...lockedMeals], mealStatuses, seed, swapSeed, tab, planStartedAt)
+  }, [profile, plan, lockedMeals, mealStatuses, seed, swapSeed, tab, planStartedAt])
+
+  useEffect(() => {
+    saveFavoriteRecipeIds(favoriteRecipeIds)
+  }, [favoriteRecipeIds])
 
   const shoppingGroups = useMemo(() => CATEGORY_ORDER
     .map((category) => ({ category, items: plan.shoppingList.filter((item) => item.category === category) }))
@@ -104,6 +113,24 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
     neighborhood: profile.neighborhood,
   }
   const readableTitle = [readableLocation.neighborhood, readableLocation.district, readableLocation.city].filter(Boolean).join(', ')
+
+  const setMealActivity = (mealId: string, status: MealActivityStatus) => {
+    setMealStatuses((current) => {
+      const next = { ...current }
+      if (status === 'planned') delete next[mealId]
+      else next[mealId] = status
+      return next
+    })
+  }
+
+  const toggleFavorite = (recipeId: string) => {
+    setFavoriteRecipeIds((current) => {
+      const next = new Set(current)
+      if (next.has(recipeId)) next.delete(recipeId)
+      else next.add(recipeId)
+      return next
+    })
+  }
 
   const toggleMealLock = (dayIndex: number, mealIndex: number) => {
     const key = mealKey(dayIndex, mealIndex)
@@ -128,6 +155,13 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
     }
 
     const currentMeal = plan.days[dayIndex]?.meals[mealIndex]
+    if (!currentMeal) return
+    const activity = mealStatuses[currentMeal.id]
+    if (activity && activity !== 'planned') {
+      setNotice('Yedim veya Atladım olarak işaretlenen öğünü değiştirmeden önce günlük durumunu geri al.')
+      return
+    }
+
     const nextSwapSeed = swapSeed + 1
     const nextPlan = swapMealInEditedPlan(plan, profile, dayIndex, mealIndex, nextSwapSeed)
     setSwapSeed(nextSwapSeed)
@@ -139,33 +173,52 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 
     const nextMeal = nextPlan.days[dayIndex]?.meals[mealIndex]
     setPlan(nextPlan)
-    setNotice(`${currentMeal?.title ?? 'Öğün'} → ${nextMeal?.title ?? 'yeni alternatif'} olarak değişti. Bütçe ve alışveriş listesi yeniden hesaplandı.`)
+    setMealStatuses((current) => {
+      const next = { ...current }
+      delete next[currentMeal.id]
+      return next
+    })
+    setNotice(`${currentMeal.title} → ${nextMeal?.title ?? 'yeni alternatif'} olarak değişti. Bütçe ve alışveriş listesi yeniden hesaplandı.`)
   }
 
   const shufflePlan = () => {
     const nextSeed = seed + 1
     const freshPlan = generateWeeklyPlan(profile, nextSeed)
+    let nextPlan = freshPlan
 
-    if (lockedMeals.size === 0) {
-      setPlan(freshPlan)
-    } else {
+    if (lockedMeals.size > 0) {
       const mergedDays = freshPlan.days.map((day, dayIndex) => ({
         ...day,
         meals: day.meals.map((meal, mealIndex) => lockedMeals.has(mealKey(dayIndex, mealIndex))
           ? (plan.days[dayIndex]?.meals[mealIndex] ?? meal)
           : meal),
       }))
-
-      setPlan(rebuildEditedPlan(profile, mergedDays, {
+      nextPlan = rebuildEditedPlan(profile, mergedDays, {
         adjustedForBudget: freshPlan.adjustedForBudget,
         convertedOutsideMeals: freshPlan.convertedOutsideMeals,
-      }))
+      })
     }
 
+    const validMealIds = new Set(nextPlan.days.flatMap((day) => day.meals.map((meal) => meal.id)))
+    setMealStatuses((current) => Object.fromEntries(Object.entries(current).filter(([id]) => validMealIds.has(id))))
+    setPlan(nextPlan)
     setSeed(nextSeed)
     setNotice(lockedMeals.size > 0
       ? `Hafta yeniden oluşturuldu; ${lockedMeals.size} kilitli öğün aynen korundu.`
       : 'Hafta yeni bir kombinasyonla yeniden oluşturuldu.')
+  }
+
+  const startFreshPlan = () => {
+    const nextSeed = seed + 1
+    setPlan(generateWeeklyPlan(profile, nextSeed))
+    setSeed(nextSeed)
+    setSwapSeed(10)
+    setLockedMeals(new Set())
+    setMealStatuses({})
+    setPlanStartedAt(localDateKey())
+    setTab('today')
+    setSelectedMeal(null)
+    setNotice('Yeni plan bugünden başladı. Tercihlerin aynen korundu. ✨')
   }
 
   const useLiveLocation = async () => {
@@ -195,82 +248,103 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
   }
 
   return (
-    <main className="dashboard-page plan-v1-page">
+    <main className={`dashboard-page plan-v1-page dashboard-tab-${tab}`}>
       <nav className="topbar shell dashboard-nav">
         <button className="brand brand-button" type="button" onClick={onHome}><span className="brand-mark">🍋</span><span>lokma</span></button>
         <div className="nav-links dashboard-tabs">
-          <button type="button" className={`dashboard-nav-button ${tab === 'week' ? 'active' : ''}`} onClick={() => setTab('week')}>📅 Haftam</button>
-          <button type="button" className={`dashboard-nav-button ${tab === 'shopping' ? 'active' : ''}`} onClick={() => setTab('shopping')}>🛒 Alışveriş <span className="nav-count">{plan.shoppingList.length}</span></button>
+          <button type="button" className={`dashboard-nav-button ${tab === 'today' ? 'active' : ''}`} onClick={() => setTab('today')}>☀️ Bugün</button>
+          <button type="button" className={`dashboard-nav-button ${tab === 'week' ? 'active' : ''}`} onClick={() => setTab('week')}>📅 Hafta</button>
+          <button type="button" className={`dashboard-nav-button ${tab === 'shopping' ? 'active' : ''}`} onClick={() => setTab('shopping')}>🛒 Liste <span className="nav-count">{plan.shoppingList.length}</span></button>
           <button type="button" className="profile-pill" onClick={onEdit}>👤 {profile.name || 'Profil'} <span>⚙️</span></button>
         </div>
       </nav>
 
-      <section className="dashboard-hero shell plan-engine-hero">
-        <div>
-          <span className="hero-badge">🧠 Plan motoru v1.7 çalışıyor</span>
-          <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
-          <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {readableTitle}</p>
-          <div className="engine-status-row">
-            <span>🎯 ≈ {plan.nutritionTargets.calories} kcal hedef</span>
-            <span>💪 ≈ {plan.nutritionTargets.protein} g protein</span>
-            <span>♻️ %{plan.reuseScore} malzeme yeniden kullanım</span>
-            <span>👨‍🍳 {profile.cookingEquipment.length} mutfak ekipmanı</span>
-            <span>💾 Otomatik kayıt</span>
-            {lockedMeals.size > 0 && <span className="locked-status">🔒 {lockedMeals.size} öğün sabit</span>}
-          </div>
-        </div>
-        <div className="dashboard-hero-actions">
-          <button type="button" className="shuffle-plan-button" onClick={shufflePlan}>🎲 Kilitler hariç karıştır</button>
-          <button type="button" className="edit-plan-button" onClick={onEdit}>⚙️ Tercihleri düzenle</button>
-        </div>
-      </section>
-
-      <section className="shell location-bridge-card">
-        <span className="location-bridge-icon">📍</span>
-        <div className="location-bridge-copy">
-          <strong>{locationStatus.status === 'loading' ? 'Konum alınıyor…' : readableTitle || 'Plan konumu'}</strong>
-          <p>{locationStatus.message ?? 'Bu il / ilçe / mahalle planı oluştururken seçtiğin konumdan geliyor. Canlı konumla istediğin zaman yenileyebilirsin.'}</p>
-          <div className="location-readable-line">
-            <span><small>İl</small>{readableLocation.city || '—'}</span>
-            <span><small>İlçe</small>{readableLocation.district || '—'}</span>
-            <span><small>Mahalle</small>{readableLocation.neighborhood || '—'}</span>
-          </div>
-          {locationStatus.coords && <span className="location-coordinate">{locationStatus.coords.latitude.toFixed(5)}, {locationStatus.coords.longitude.toFixed(5)} • ±{Math.round(locationStatus.coords.accuracy)} m</span>}
-        </div>
-        <button type="button" className="location-bridge-action" disabled={locationStatus.status === 'loading'} onClick={useLiveLocation}>
-          {locationStatus.status === 'loading' ? 'Konum alınıyor…' : locationStatus.status === 'success' ? 'Canlı konumu yenile' : 'Canlı konumu kullan'}
-        </button>
-      </section>
-
-      <NearbyPlacesPanel profile={profile} coords={locationStatus.coords} locationLabel={readableTitle} />
-
       {notice && <section className="shell plan-editor-notice" role="status"><span>✨</span><p>{notice}</p><button type="button" onClick={() => setNotice(null)} aria-label="Bildirimi kapat">×</button></section>}
 
-      {plan.adjustedForBudget && (
-        <section className="shell budget-smart-note">
-          <span className="budget-smart-icon">🪄</span>
-          <div><strong>Bütçeyi korumak için planı akıllıca dengeledik.</strong><p>Seçtiğin ev/sipariş oranını başlangıç kabul ettik; tahmini toplam bütçeyi aşınca {plan.convertedOutsideMeals} dışarı öğününü daha ekonomik ev yemeğine çevirdik.</p></div>
-          <span className="budget-note-pill">{budgetOkay ? `+${money(plan.remainingBudget)} ₺ pay` : `${money(Math.abs(plan.remainingBudget))} ₺ aşım`}</span>
-        </section>
+      {tab === 'today' ? (
+        <TodayView
+          profile={profile}
+          plan={plan}
+          planStartedAt={planStartedAt}
+          mealStatuses={mealStatuses}
+          favoriteRecipeIds={favoriteRecipeIds}
+          onMealStatus={setMealActivity}
+          onToggleFavorite={toggleFavorite}
+          onOpenDetail={(dayIndex, mealIndex) => setSelectedMeal({ dayIndex, mealIndex })}
+          onSwap={swapMeal}
+          onGoWeek={() => setTab('week')}
+          onGoShopping={() => setTab('shopping')}
+          onFreshPlan={startFreshPlan}
+        />
+      ) : (
+        <>
+          <section className="dashboard-hero shell plan-engine-hero">
+            <div>
+              <span className="hero-badge">🧠 Plan motoru v1.8 çalışıyor</span>
+              <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
+              <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {readableTitle}</p>
+              <div className="engine-status-row">
+                <span>🎯 ≈ {plan.nutritionTargets.calories} kcal hedef</span>
+                <span>💪 ≈ {plan.nutritionTargets.protein} g protein</span>
+                <span>♻️ %{plan.reuseScore} malzeme yeniden kullanım</span>
+                <span>👨‍🍳 {profile.cookingEquipment.length} mutfak ekipmanı</span>
+                <span>♥ {favoriteRecipeIds.size} favori</span>
+                <span>💾 Otomatik kayıt</span>
+                {lockedMeals.size > 0 && <span className="locked-status">🔒 {lockedMeals.size} öğün sabit</span>}
+              </div>
+            </div>
+            <div className="dashboard-hero-actions">
+              <button type="button" className="shuffle-plan-button" onClick={shufflePlan}>🎲 Kilitler hariç karıştır</button>
+              <button type="button" className="edit-plan-button" onClick={onEdit}>⚙️ Tercihleri düzenle</button>
+            </div>
+          </section>
+
+          <section className="shell location-bridge-card">
+            <span className="location-bridge-icon">📍</span>
+            <div className="location-bridge-copy">
+              <strong>{locationStatus.status === 'loading' ? 'Konum alınıyor…' : readableTitle || 'Plan konumu'}</strong>
+              <p>{locationStatus.message ?? 'Bu il / ilçe / mahalle planı oluştururken seçtiğin konumdan geliyor. Canlı konumla istediğin zaman yenileyebilirsin.'}</p>
+              <div className="location-readable-line">
+                <span><small>İl</small>{readableLocation.city || '—'}</span>
+                <span><small>İlçe</small>{readableLocation.district || '—'}</span>
+                <span><small>Mahalle</small>{readableLocation.neighborhood || '—'}</span>
+              </div>
+              {locationStatus.coords && <span className="location-coordinate">{locationStatus.coords.latitude.toFixed(5)}, {locationStatus.coords.longitude.toFixed(5)} • ±{Math.round(locationStatus.coords.accuracy)} m</span>}
+            </div>
+            <button type="button" className="location-bridge-action" disabled={locationStatus.status === 'loading'} onClick={useLiveLocation}>
+              {locationStatus.status === 'loading' ? 'Konum alınıyor…' : locationStatus.status === 'success' ? 'Canlı konumu yenile' : 'Canlı konumu kullan'}
+            </button>
+          </section>
+
+          <NearbyPlacesPanel profile={profile} coords={locationStatus.coords} locationLabel={readableTitle} />
+
+          {plan.adjustedForBudget && (
+            <section className="shell budget-smart-note">
+              <span className="budget-smart-icon">🪄</span>
+              <div><strong>Bütçeyi korumak için planı akıllıca dengeledik.</strong><p>Seçtiğin ev/sipariş oranını başlangıç kabul ettik; tahmini toplam bütçeyi aşınca {plan.convertedOutsideMeals} dışarı öğününü daha ekonomik ev yemeğine çevirdik.</p></div>
+              <span className="budget-note-pill">{budgetOkay ? `+${money(plan.remainingBudget)} ₺ pay` : `${money(Math.abs(plan.remainingBudget))} ₺ aşım`}</span>
+            </section>
+          )}
+
+          <section className="plan-metrics shell engine-metrics">
+            <article className={budgetOkay ? '' : 'metric-warning'}><span>💸 Gerçek plan bütçesi</span><strong>{money(plan.totalCost)} ₺</strong><small>{money(profile.budget)} ₺ haftalık limitin</small><div className="metric-progress"><i style={{ width: `${Math.min(100, plan.budgetUsagePct)}%` }} /></div></article>
+            <article className={budgetOkay ? 'metric-good' : 'metric-warning'}><span>{budgetOkay ? '💚 Tahmini kalan' : '⚠️ Bütçe farkı'}</span><strong>{money(Math.abs(plan.remainingBudget))} ₺</strong><small>{budgetOkay ? 'Limit içinde kaldık' : 'Son değişiklik bütçeyi aştı'}</small></article>
+            <article><span>🔥 Günlük ortalama</span><strong>{plan.averageCalories} kcal</strong><small>{calorieDelta === 0 ? 'Hedefle aynı' : `${calorieDelta > 0 ? '+' : ''}${calorieDelta} kcal hedef farkı`}</small></article>
+            <article><span>💪 Protein ortalaması</span><strong>{plan.averageProtein} g</strong><small>{proteinDelta === 0 ? 'Hedefle aynı' : `${proteinDelta > 0 ? '+' : ''}${proteinDelta} g hedef farkı`}</small></article>
+          </section>
+
+          <section className="shell split-cost-strip">
+            <div><span>🛒 Market paketleri</span><strong>{money(plan.marketCost)} ₺</strong></div><span className="split-plus">+</span>
+            <div><span>🛵 Sipariş / dışarı</span><strong>{money(plan.outsideCost)} ₺</strong></div><span className="split-equals">=</span>
+            <div className="split-total"><span>Haftalık tahmin</span><strong>{money(plan.totalCost)} ₺</strong></div>
+            <small>Bir öğünü değiştirdiğinde bu rakamlar ve alışveriş listesi anında yeniden hesaplanır. Market karşılaştırma bölümündeki fiyatlar ayrıca kaynağıyla etiketlenir.</small>
+          </section>
+
+          {tab === 'week'
+            ? <WeekView profile={profile} plan={plan} planStartedAt={planStartedAt} lockedMeals={lockedMeals} onSwap={swapMeal} onToggleLock={toggleMealLock} onOpenDetail={(dayIndex, mealIndex) => setSelectedMeal({ dayIndex, mealIndex })} onShopping={() => setTab('shopping')} />
+            : <ShoppingView groups={shoppingGroups} plan={plan} onWeek={() => setTab('week')} />}
+        </>
       )}
-
-      <section className="plan-metrics shell engine-metrics">
-        <article className={budgetOkay ? '' : 'metric-warning'}><span>💸 Gerçek plan bütçesi</span><strong>{money(plan.totalCost)} ₺</strong><small>{money(profile.budget)} ₺ haftalık limitin</small><div className="metric-progress"><i style={{ width: `${Math.min(100, plan.budgetUsagePct)}%` }} /></div></article>
-        <article className={budgetOkay ? 'metric-good' : 'metric-warning'}><span>{budgetOkay ? '💚 Tahmini kalan' : '⚠️ Bütçe farkı'}</span><strong>{money(Math.abs(plan.remainingBudget))} ₺</strong><small>{budgetOkay ? 'Limit içinde kaldık' : 'Son değişiklik bütçeyi aştı'}</small></article>
-        <article><span>🔥 Günlük ortalama</span><strong>{plan.averageCalories} kcal</strong><small>{calorieDelta === 0 ? 'Hedefle aynı' : `${calorieDelta > 0 ? '+' : ''}${calorieDelta} kcal hedef farkı`}</small></article>
-        <article><span>💪 Protein ortalaması</span><strong>{plan.averageProtein} g</strong><small>{proteinDelta === 0 ? 'Hedefle aynı' : `${proteinDelta > 0 ? '+' : ''}${proteinDelta} g hedef farkı`}</small></article>
-      </section>
-
-      <section className="shell split-cost-strip">
-        <div><span>🛒 Market paketleri</span><strong>{money(plan.marketCost)} ₺</strong></div><span className="split-plus">+</span>
-        <div><span>🛵 Sipariş / dışarı</span><strong>{money(plan.outsideCost)} ₺</strong></div><span className="split-equals">=</span>
-        <div className="split-total"><span>Haftalık tahmin</span><strong>{money(plan.totalCost)} ₺</strong></div>
-        <small>Bir öğünü değiştirdiğinde bu rakamlar ve alışveriş listesi anında yeniden hesaplanır. Market karşılaştırma bölümündeki fiyatlar ayrıca kaynağıyla etiketlenir.</small>
-      </section>
-
-      {tab === 'week'
-        ? <WeekView profile={profile} plan={plan} lockedMeals={lockedMeals} onSwap={swapMeal} onToggleLock={toggleMealLock} onOpenDetail={(dayIndex, mealIndex) => setSelectedMeal({ dayIndex, mealIndex })} onShopping={() => setTab('shopping')} />
-        : <ShoppingView groups={shoppingGroups} plan={plan} onWeek={() => setTab('week')} />}
 
       {selectedMeal && selectedMealValue && (
         <RecipeDetailDrawer
@@ -290,6 +364,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 type WeekViewProps = {
   profile: UserPlanProfile
   plan: WeeklyPlan
+  planStartedAt: string
   lockedMeals: Set<string>
   onSwap: (dayIndex: number, mealIndex: number) => void
   onToggleLock: (dayIndex: number, mealIndex: number) => void
@@ -297,12 +372,13 @@ type WeekViewProps = {
   onShopping: () => void
 }
 
-function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDetail, onShopping }: WeekViewProps) {
+function WeekView({ profile, plan, planStartedAt, lockedMeals, onSwap, onToggleLock, onOpenDetail, onShopping }: WeekViewProps) {
+  const todayIndex = planDayIndex(planStartedAt)
   return (
     <>
       <section className="week-section shell engine-week-section">
         <div className="section-title-row">
-          <div><span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span><h2>Gün gün yemek planın</h2><p>Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açıp Lokma'nın neden seçtiğini ve nasıl pişireceğini görebilirsin.</p></div>
+          <div><span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span><h2>Gün gün yemek planın</h2><p>Plan artık gerçek tarihle ilerliyor. Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açabilirsin.</p></div>
           <button className="shopping-jump-button" type="button" onClick={onShopping}>🛒 Listeye geç →</button>
         </div>
         <div className="meal-editor-guide"><span><b>👁 Detay</b> evdeyse pişirme yöntemi, dışarıdaysa gerçek restoran adayı gösterir.</span><span><b>↻ Değiştir</b> yeni alternatif bulur.</span><span><b>🔒 Sabitle</b> sonraki karıştırmalarda korur.</span></div>
@@ -310,9 +386,10 @@ function WeekView({ profile, plan, lockedMeals, onSwap, onToggleLock, onOpenDeta
           {plan.days.map((day) => {
             const caloriePct = Math.round(day.totalCalories / Math.max(1, plan.nutritionTargets.calories) * 100)
             const proteinPct = Math.round(day.totalProtein / Math.max(1, plan.nutritionTargets.protein) * 100)
+            const stateLabel = day.index === todayIndex ? 'Bugün' : day.index < todayIndex ? 'Geçmiş' : 'Planlı'
             return (
-              <article className="engine-day-card" key={day.index}>
-                <div className="engine-day-header"><div><span className="day-number">{String(day.index + 1).padStart(2, '0')}</span><div><h3>{day.name}</h3><small>≈ {money(day.totalEstimatedPrice)} ₺ marjinal öğün değeri</small></div></div><span className="day-goal-chip">{day.index === 0 ? 'Başlangıç' : day.index === plan.days.length - 1 ? 'Hafta sonu' : 'Dengeli gün'}</span></div>
+              <article className={`engine-day-card ${day.index === todayIndex ? 'is-today' : ''}`} key={day.index}>
+                <div className="engine-day-header"><div><span className="day-number">{String(day.index + 1).padStart(2, '0')}</span><div><h3>{formatPlanDate(planStartedAt, day.index, true)}</h3><small>≈ {money(day.totalEstimatedPrice)} ₺ marjinal öğün değeri</small></div></div><span className="day-goal-chip">{stateLabel}</span></div>
                 <div className="engine-meal-list">
                   {day.meals.map((meal, mealIndex) => (
                     <MealRow
