@@ -8,26 +8,41 @@
 .shopping-progress-line i { display: block; height: 100%; border-radius: inherit; background: #4c7959; }
 .shopping-progress-line span { color: #54705d; font-size: 9px; font-weight: 900; }
 .shopping-checklist-items { display: grid; gap: 7px; }
-.shopping-check-row { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto; gap: 9px; align-items: center; padding: 10px; border: 1px solid rgba(44,72,53,.07); border-radius: 14px; background: rgba(255,255,255,.78); }
+.shopping-check-row { display: grid; grid-template-columns: auto minmax(0,1fr) 116px auto auto; gap: 9px; align-items: center; padding: 10px; border: 1px solid rgba(44,72,53,.07); border-radius: 14px; background: rgba(255,255,255,.78); }
 .shopping-check-row.is-pantry { background: #edf5e4; }
+.shopping-check-row.is-partial-pantry { border-color: rgba(161,123,52,.16); background: #fff9e9; }
 .shopping-check-row.is-purchased { opacity: .66; background: #f1f0eb; }
 .shopping-check-row > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #f5f3eb; font-size: 18px; }
-.shopping-check-row strong { display: block; color: #394f42; font-size: 10px; }
-.shopping-check-row small { display: block; margin-top: 2px; color: #879189; font-size: 8px; }
+.shopping-check-main strong { display: block; color: #394f42; font-size: 10px; }
+.shopping-check-main small { display: block; margin-top: 2px; color: #879189; font-size: 8px; }
+.shopping-check-main em { display: block; margin-top: 4px; color: #8c7446; font-size: 8px; font-style: normal; font-weight: 900; }
 .shopping-check-row button { min-height: 34px; padding: 0 9px; border: 1px solid rgba(50,82,58,.10); border-radius: 10px; background: #fff; color: #607068; font-size: 8px; font-weight: 900; }
 .shopping-check-row button.active-pantry { background: #4d7959; color: #fff; }
 .shopping-check-row button.active-purchased { background: #6e756f; color: #fff; }
+.pantry-quantity-field { display: grid; gap: 4px; }
+.pantry-quantity-field > span { color: #7e8a82; font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
+.pantry-quantity-field > div { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; overflow: hidden; border: 1px solid rgba(50,82,58,.11); border-radius: 10px; background: #fff; }
+.pantry-quantity-field input { width: 100%; min-width: 0; height: 34px; padding: 0 7px; border: 0; outline: 0; background: transparent; color: #405448; font-size: 10px; font-weight: 800; }
+.pantry-quantity-field b { padding-right: 7px; color: #849087; font-size: 8px; }
+.pantry-fill-button { white-space: nowrap; }
 .shopping-check-summary { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
 .shopping-check-summary span { padding: 6px 8px; border-radius: 999px; background: rgba(255,255,255,.8); color: #637168; font-size: 8px; font-weight: 900; }
 .shopping-all-done { margin-top: 14px; padding: 14px; border-radius: 15px; background: #e9f4e3; color: #41634a; font-size: 10px; font-weight: 900; text-align: center; }
+.selected-market-quote { margin-top: 10px; padding: 10px 12px; border-radius: 13px; background: #edf4e2; color: #526a5a; font-size: 9px; }
 
 @media (max-width:760px) {
   .shopping-checklist-panel { margin: 12px 0; padding: 14px; border-radius: 19px; }
-  .shopping-checklist-head { align-items: center; }
+  .shopping-checklist-head { align-items: flex-start; }
   .shopping-checklist-head h3 { font-size: 15px; }
   .shopping-checklist-head p { font-size: 10px; }
-  .shopping-check-row { grid-template-columns: 38px minmax(0,1fr); }
+  .shopping-check-row { grid-template-columns: 38px minmax(0,1fr); gap: 8px; }
+  .shopping-check-main { min-width: 0; }
+  .shopping-check-main strong { font-size: 12px; }
+  .shopping-check-main small,.shopping-check-main em { font-size: 9px; }
+  .pantry-quantity-field { grid-column: 1 / -1; }
+  .pantry-quantity-field > div { min-height: 44px; }
+  .pantry-quantity-field input { height: 42px; font-size: 16px; }
   .shopping-check-row > button { min-height: 42px; font-size: 9px; }
-  .shopping-check-row > button:first-of-type { grid-column: 1 / 2; }
+  .shopping-check-row > .pantry-fill-button { grid-column: 1 / 2; }
   .shopping-check-row > button:last-of-type { grid-column: 2 / 3; }
 }
