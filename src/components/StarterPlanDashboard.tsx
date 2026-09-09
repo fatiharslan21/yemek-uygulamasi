@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { generateWeeklyPlan } from '../engine/planEngine'
 import { rebuildEditedPlan, swapMealInEditedPlan } from '../engine/planEditor'
 import { RecipeDetailDrawer } from './RecipeDetailDrawer'
@@ -8,6 +8,7 @@ import { MarketShoppingBridge } from './MarketShoppingBridge'
 import { PriceIntelligencePanel } from './PriceIntelligencePanel'
 import { BrowserLocationError, requestBrowserLocation, type BrowserCoordinates } from '../services/browserLocation'
 import { reverseGeocodeCoordinates, type ResolvedLocation } from '../services/reverseGeocode'
+import { loadPlanSession, savePlanSession } from '../services/planSessionStorage'
 import type { IngredientDefinition, PlannedMeal, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
 import '../plan-engine.css'
 import '../meal-editor.css'
@@ -60,12 +61,13 @@ function mealKey(dayIndex: number, mealIndex: number) {
 }
 
 export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDashboardProps) {
-  const [seed, setSeed] = useState(1)
-  const [swapSeed, setSwapSeed] = useState(10)
-  const [tab, setTab] = useState<DashboardTab>('week')
-  const [plan, setPlan] = useState<WeeklyPlan>(() => generateWeeklyPlan(profile, 1))
-  const [lockedMeals, setLockedMeals] = useState<Set<string>>(() => new Set())
-  const [notice, setNotice] = useState<string | null>(null)
+  const [initialSession] = useState(() => loadPlanSession(profile))
+  const [seed, setSeed] = useState(() => initialSession?.seed ?? 1)
+  const [swapSeed, setSwapSeed] = useState(() => initialSession?.swapSeed ?? 10)
+  const [tab, setTab] = useState<DashboardTab>(() => initialSession?.tab ?? 'week')
+  const [plan, setPlan] = useState<WeeklyPlan>(() => initialSession?.plan ?? generateWeeklyPlan(profile, 1))
+  const [lockedMeals, setLockedMeals] = useState<Set<string>>(() => new Set(initialSession?.lockedMealKeys ?? []))
+  const [notice, setNotice] = useState<string | null>(() => initialSession ? 'Son planın bu cihazdan geri yüklendi. 💚' : null)
   const [selectedMeal, setSelectedMeal] = useState<SelectedMeal | null>(null)
   const [locationStatus, setLocationStatus] = useState<LocationStatus>(() => {
     if (profile.latitude != null && profile.longitude != null) {
@@ -82,6 +84,10 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
     }
     return { status: 'idle' }
   })
+
+  useEffect(() => {
+    savePlanSession(profile, plan, [...lockedMeals], seed, swapSeed, tab)
+  }, [profile, plan, lockedMeals, seed, swapSeed, tab])
 
   const shoppingGroups = useMemo(() => CATEGORY_ORDER
     .map((category) => ({ category, items: plan.shoppingList.filter((item) => item.category === category) }))
@@ -201,7 +207,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 
       <section className="dashboard-hero shell plan-engine-hero">
         <div>
-          <span className="hero-badge">🧠 Plan motoru v1.6 çalışıyor</span>
+          <span className="hero-badge">🧠 Plan motoru v1.7 çalışıyor</span>
           <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
           <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {readableTitle}</p>
           <div className="engine-status-row">
@@ -209,6 +215,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
             <span>💪 ≈ {plan.nutritionTargets.protein} g protein</span>
             <span>♻️ %{plan.reuseScore} malzeme yeniden kullanım</span>
             <span>👨‍🍳 {profile.cookingEquipment.length} mutfak ekipmanı</span>
+            <span>💾 Otomatik kayıt</span>
             {lockedMeals.size > 0 && <span className="locked-status">🔒 {lockedMeals.size} öğün sabit</span>}
           </div>
         </div>
