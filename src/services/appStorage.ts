@@ -1,3 +1,4 @@
+import { clearWeightHistory } from './weightTrackingStorage'
 import type { UserPlanProfile } from '../types'
 
 const STORAGE_KEY = 'lokma.app.v1'
@@ -45,4 +46,5 @@ export function saveAppState(profile: UserPlanProfile) {
 
 export function clearAppState() {
   window.localStorage.removeItem(STORAGE_KEY)
+  clearWeightHistory()
 }
