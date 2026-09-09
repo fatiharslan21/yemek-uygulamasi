@@ -1,0 +1,150 @@
+html { scroll-behavior: smooth; }
+body { min-height: 100vh; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+
+.about-page { min-height: 100vh; }
+.local-profile-card { margin-top: 34px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; border: 1px solid rgba(47,112,84,.12); border-radius: 22px; background: rgba(255,255,255,.68); box-shadow: 0 18px 50px rgba(42,67,52,.06); }
+.local-profile-card > div { display: flex; align-items: center; gap: 12px; }
+.local-profile-card > div > span { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 15px; background: #edf4dc; font-size: 22px; }
+.local-profile-card strong { display: block; color: #344c3e; font-size: 12px; }
+.local-profile-card p { margin: 5px 0 0; color: #7c877f; font-size: 9px; line-height: 1.55; }
+.local-profile-card button { border: 1px solid rgba(176,82,66,.14); border-radius: 12px; background: #fff3ef; color: #9a594c; padding: 10px 13px; font-size: 9px; font-weight: 900; white-space: nowrap; }
+
+@media (max-width: 760px) {
+  :root { --mobile-bottom-nav-height: 76px; }
+  html { background: #f7f4eb; }
+  body { margin: 0; overflow-x: hidden; background: #f7f4eb; }
+  body, button, input, select, textarea { font-size: 16px; }
+  .shell { width: min(100% - 28px, 1180px); }
+
+  .about-topbar { min-height: 64px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .about-topbar .nav-links a { display: none; }
+  .about-topbar .nav-links button { min-height: 42px; padding: 0 14px; }
+  .about-hero { min-height: auto; padding-top: 34px; padding-bottom: 28px; }
+  .about-hero .hero-copy { max-width: 100%; }
+  .about-hero .hero-copy h1 { font-size: clamp(38px, 12vw, 58px); line-height: .98; letter-spacing: -2px; }
+  .about-hero .hero-copy > p { font-size: 15px; line-height: 1.65; }
+  .about-hero .hero-actions { align-items: stretch; }
+  .about-hero .hero-primary { width: 100%; min-height: 54px; justify-content: center; font-size: 14px; border-radius: 17px; }
+  .about-hero .hero-visual { margin-top: 12px; transform: scale(.92); }
+  .home-demo-strip { overflow-x: auto; }
+  .demo-strip-inner { min-width: 690px; }
+  .how-section, .why-lokma { padding-top: 54px; padding-bottom: 20px; }
+  .section-heading.centered { text-align: left; align-items: flex-start; }
+  .steps-grid { grid-template-columns: 1fr; gap: 12px; }
+  .steps-grid article { min-height: auto; padding: 20px; }
+  .why-card { grid-template-columns: 1fr; padding: 22px; gap: 24px; }
+  .ingredient-chain { overflow-x: auto; justify-content: flex-start; padding-bottom: 4px; }
+  .local-profile-card { flex-direction: column; align-items: stretch; margin-top: 26px; padding: 16px; }
+  .local-profile-card button { min-height: 44px; }
+
+  .plan-location-page, .onboarding-page, .dashboard-page { min-height: 100dvh; }
+  .plan-location-nav, .onboarding-header { width: 100%; padding-left: 14px; padding-right: 14px; padding-top: max(10px, env(safe-area-inset-top)); }
+  .plan-location-nav > span { display: none; }
+  .plan-location-nav .ghost-action, .onboarding-header .ghost-action { min-height: 40px; }
+  .plan-location-shell, .onboarding-shell { width: 100%; padding-left: 12px; padding-right: 12px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .plan-location-card, .onboarding-card { border-radius: 28px 28px 20px 20px; box-shadow: 0 18px 50px rgba(42,67,52,.08); }
+  .plan-location-card { padding: 24px 18px 18px; }
+  .plan-location-copy h1, .step-panel h1, .step-panel h2 { letter-spacing: -1.1px; }
+  .location-mode-grid, .plan-location-form, .form-grid.two-col, .location-form { grid-template-columns: 1fr !important; }
+  .live-location-choice { min-height: 78px; border-radius: 18px; }
+  .plan-location-form .input-field input, .input-field input, .input-field select, .input-field textarea { min-height: 48px; font-size: 16px; }
+  .resolved-location-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+  .plan-location-actions { position: sticky; bottom: 0; z-index: 5; margin: 22px -18px -18px; padding: 12px 18px max(12px, env(safe-area-inset-bottom)); background: linear-gradient(180deg,rgba(255,253,248,0),#fffdf8 22%); }
+  .plan-location-actions .location-next { min-height: 52px; flex: 1; }
+
+  .onboarding-card { padding: 20px 16px 16px; }
+  .step-panel { min-height: auto; }
+  .choice-grid, .choice-grid.compact, .diet-grid, .style-presets, .kitchen-equipment-grid { grid-template-columns: 1fr !important; }
+  .choice-card, .kitchen-equipment-option { min-height: 66px; }
+  .tag-selector button { min-height: 40px; padding: 8px 12px; }
+  .binary-card { min-height: 100px; }
+  .segmented button { min-height: 40px; }
+  .budget-hero-input { padding: 18px; }
+  .budget-hero-input input[type='number'] { font-size: 36px; min-width: 0; width: 100%; }
+  .budget-breakdown { grid-template-columns: 1fr; }
+  .summary-hero, .summary-grid { grid-template-columns: 1fr !important; }
+  .step-navigation { position: sticky; bottom: 0; z-index: 8; margin: 20px -16px -16px; padding: 12px 16px max(12px, env(safe-area-inset-bottom)); background: linear-gradient(180deg,rgba(255,253,248,0),#fffdf8 22%); }
+  .step-navigation button { min-height: 50px; }
+
+  .dashboard-page { padding-bottom: calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 18px); }
+  .dashboard-nav { min-height: 62px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .dashboard-nav > .brand { margin: 0 auto; }
+  .dashboard-nav .dashboard-tabs { position: fixed; left: 10px; right: 10px; bottom: 8px; z-index: 60; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); border: 1px solid rgba(41,74,54,.10); border-radius: 22px; background: rgba(255,255,255,.91); box-shadow: 0 16px 45px rgba(30,52,39,.18); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+  .dashboard-tabs .dashboard-nav-button, .dashboard-tabs .profile-pill { min-width: 0; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 16px; padding: 8px 6px; font-size: 10px; white-space: nowrap; }
+  .dashboard-tabs .dashboard-nav-button.active { background: #edf3dd; color: #315f49; }
+  .dashboard-tabs .profile-pill { background: #f8f4eb; }
+  .dashboard-tabs .profile-pill span { display: none; }
+  .nav-count { min-width: 17px; height: 17px; display: inline-grid; place-items: center; font-size: 8px; }
+
+  .dashboard-hero { padding-top: 22px; }
+  .plan-engine-hero { grid-template-columns: 1fr !important; gap: 16px; }
+  .plan-engine-hero h1 { font-size: clamp(34px,10vw,48px); line-height: 1; }
+  .dashboard-hero-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .dashboard-hero-actions button { min-height: 46px; padding: 8px 10px; }
+  .engine-status-row { gap: 6px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; scrollbar-width: none; }
+  .engine-status-row::-webkit-scrollbar { display: none; }
+  .engine-status-row > span { flex: 0 0 auto; }
+
+  .location-bridge-card { grid-template-columns: auto 1fr; gap: 12px; padding: 15px; border-radius: 20px; }
+  .location-bridge-action { grid-column: 1 / -1; min-height: 44px; width: 100%; }
+  .location-readable-line { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+  .location-readable-line span { min-width: 0; }
+
+  .nearby-section, .price-intelligence-panel, .shopping-page-section, .week-section { border-radius: 22px; }
+  .nearby-heading, .section-title-row, .shopping-title-row { align-items: stretch; }
+  .nearby-heading { grid-template-columns: 1fr; }
+  .nearby-search-button, .shopping-jump-button { width: 100%; min-height: 46px; }
+  .nearby-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .nearby-tabs button { min-height: 44px; }
+  .nearby-place-card { grid-template-columns: 30px 38px minmax(0,1fr); }
+  .nearby-place-actions { grid-column: 2 / -1; grid-template-columns: 1fr 1fr; width: 100%; }
+  .nearby-place-actions > * { width: 100%; text-align: center; min-height: 40px; display: grid; place-items: center; }
+
+  .plan-metrics, .engine-metrics, .shopping-overview-grid, .price-summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 8px; }
+  .plan-metrics article, .shopping-overview-grid article, .price-summary-grid article { min-width: 0; padding: 14px; }
+  .split-cost-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .split-plus, .split-equals { display: none; }
+  .split-total { grid-column: 1 / -1; }
+
+  .engine-day-grid { grid-template-columns: 1fr !important; }
+  .engine-day-card { border-radius: 20px; }
+  .engine-meal-row { grid-template-columns: auto minmax(0,1fr); gap: 10px; }
+  .engine-meal-row .meal-slot { grid-column: 1 / -1; }
+  .engine-meal-emoji { align-self: start; }
+  .meal-editor-side { grid-column: 1 / -1; width: 100%; }
+  .meal-editor-actions { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .meal-editor-actions button { min-height: 42px; padding: 7px 5px; font-size: 9px; }
+  .meal-tags { justify-content: flex-start; }
+  .meal-editor-guide { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .meal-editor-guide span { flex: 0 0 78%; }
+
+  .market-bridge-card { grid-template-columns: auto 1fr; }
+  .market-alternatives { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .market-alternatives button { flex: 0 0 auto; min-height: 38px; }
+  .market-quote-row { grid-template-columns: 30px minmax(0,1fr) auto; }
+  .market-quote-row > button { grid-column: 2 / -1; min-height: 40px; }
+  .split-market-grid { grid-template-columns: 1fr !important; }
+  .price-spread-list > div { grid-template-columns: auto 1fr auto; }
+  .price-spread-list em { grid-column: 2 / -1; justify-self: start; }
+
+  .recipe-detail-overlay { align-items: flex-end; }
+  .recipe-detail-drawer { width: 100%; max-width: none; max-height: 92dvh; border-radius: 28px 28px 0 0; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .recipe-detail-header { grid-template-columns: auto 1fr auto; }
+  .recipe-quick-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .recipe-ingredient-row { grid-template-columns: auto 1fr auto; }
+  .cooking-method-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; }
+  .cooking-method-tab { flex: 0 0 auto; min-height: 42px; }
+  .restaurant-candidate { grid-template-columns: 28px minmax(0,1fr) auto; }
+  .restaurant-candidate em { grid-column: 2 / -1; }
+  .recipe-detail-footer { position: sticky; bottom: 0; z-index: 4; margin-left: -1px; margin-right: -1px; padding-bottom: max(10px, env(safe-area-inset-bottom)); background: rgba(255,253,248,.96); backdrop-filter: blur(12px); }
+}
+
+@media (max-width: 390px) {
+  .shell { width: min(100% - 20px, 1180px); }
+  .plan-metrics, .engine-metrics, .shopping-overview-grid, .price-summary-grid { grid-template-columns: 1fr !important; }
+  .dashboard-tabs .dashboard-nav-button, .dashboard-tabs .profile-pill { font-size: 9px; }
+  .meal-editor-actions { grid-template-columns: 1fr; }
+  .meal-editor-guide span { flex-basis: 90%; }
+}
