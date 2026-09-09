@@ -1,4 +1,5 @@
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
+import { recipeSupportsEquipment } from '../services/cookingCompatibility'
 import type {
   MealSlot,
   MealSource,
@@ -104,6 +105,7 @@ function buildSourceSchedule(profile: UserPlanProfile, totalMeals: number, seed:
 
 function recipeMatchesProfile(recipe: Recipe, profile: UserPlanProfile) {
   if (!recipe.allowedDiets.includes(profile.diet)) return false
+  if (!recipeSupportsEquipment(recipe, profile.cookingEquipment)) return false
 
   const selectedAllergies = new Set(profile.allergies.map(normalize))
   if (recipe.allergens.some((allergen) => selectedAllergies.has(normalize(allergen)))) return false
