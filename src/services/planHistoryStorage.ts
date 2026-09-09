@@ -1,8 +1,9 @@
-import type { MealActivityStatus } from './planSessionStorage'
 import type { UserPlanProfile, WeeklyPlan } from '../types'
 
 const STORAGE_KEY = 'lokma.plan-history.v1'
 const MAX_HISTORY = 16
+
+type ArchivedMealStatus = 'planned' | 'eaten' | 'skipped'
 
 export type PlanHistoryEntry = {
   id: string
@@ -44,13 +45,15 @@ export function archivePlan(args: {
   profile: UserPlanProfile
   plan: WeeklyPlan
   startedAt: string
-  mealStatuses: Record<string, MealActivityStatus>
+  mealStatuses: Record<string, ArchivedMealStatus>
 }) {
   const { profile, plan, startedAt, mealStatuses } = args
-  const totalMeals = plan.days.reduce((sum, day) => sum + day.meals.length, 0)
-  const eatenMeals = plan.days.flatMap((day) => day.meals).filter((meal) => mealStatuses[meal.id] === 'eaten').length
-  const skippedMeals = plan.days.flatMap((day) => day.meals).filter((meal) => mealStatuses[meal.id] === 'skipped').length
+  const meals = plan.days.flatMap((day) => day.meals)
+  const totalMeals = meals.length
+  const eatenMeals = meals.filter((meal) => mealStatuses[meal.id] === 'eaten').length
+  const skippedMeals = meals.filter((meal) => mealStatuses[meal.id] === 'skipped').length
   const handledMeals = eatenMeals + skippedMeals
+
   const entry: PlanHistoryEntry = {
     id: `${startedAt}-${Date.now()}`,
     startedAt,
