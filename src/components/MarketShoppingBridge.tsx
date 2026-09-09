@@ -18,7 +18,7 @@ export function MarketShoppingBridge() {
     return (
       <div className="market-bridge-card">
         <span className="market-bridge-icon">🛒</span>
-        <div><strong>Sepeti gerçek bir markete bağlayabiliriz.</strong><p>Önce üstteki Nearby bölümünden “Çevremi tara”yı çalıştır. Bulduğumuz marketler burada sepet adayı olarak görünecek.</p></div>
+        <div><strong>Sepeti gerçek bir markete bağlayabiliriz.</strong><p>Önce üstteki Nearby bölümünden “Çevremi tara”yı çalıştır. Bulduğumuz marketler burada sepet adayı, Fiyat İstihbaratı bölümünde de karşılaştırma adayı olacak.</p></div>
       </div>
     )
   }
@@ -30,7 +30,7 @@ export function MarketShoppingBridge() {
       <span className="market-bridge-icon">🛒</span>
       <div>
         <strong>{preferredMarket ? `${preferredMarket.name} seçili` : `${active.name} en yakın aday`}</strong>
-        <p>Gerçek işletme • {distanceText(active.distanceMeters)}. Ürün bazlı gerçek fiyat/stok henüz bağlı değil; sepet toplamı şimdilik demo katalog maliyetidir.</p>
+        <p>Gerçek işletme • {distanceText(active.distanceMeters)}. Bu seçim sepetin fiziksel market adayını belirler. Hemen alttaki Fiyat İstihbaratı karşılaştırması henüz canlı ürün fiyatı değil, açıkça etiketlenmiş simülasyon senaryosudur.</p>
         <div className="market-alternatives">
           {markets.map((market) => (
             <button key={market.id} type="button" className={preferredMarket?.id === market.id ? 'active' : ''} onClick={() => setPreferredMarket(market)}>
