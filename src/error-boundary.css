@@ -1,0 +1,12 @@
+.app-error-page { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 20% 20%,#eef4dd,transparent 42%),#f7f4eb; }
+.app-error-card { width: min(520px,100%); padding: 30px; border: 1px solid rgba(45,76,54,.10); border-radius: 28px; background: rgba(255,255,255,.86); box-shadow: 0 26px 80px rgba(43,69,52,.10); text-align: center; }
+.app-error-logo { width: 64px; height: 64px; display: grid; place-items: center; margin: 0 auto 12px; border-radius: 21px; background: #eff4df; font-size: 32px; }
+.app-error-card > span { color: #77857c; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+.app-error-card h1 { margin: 6px 0 8px; color: #30483a; font-family: 'Fraunces',serif; font-size: 36px; }
+.app-error-card p { margin: 0 auto; max-width: 410px; color: #7e8982; font-size: 10px; line-height: 1.65; }
+.app-error-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+.app-error-actions button { min-height: 48px; border: 0; border-radius: 14px; background: #315f49; color: #fff; font-size: 10px; font-weight: 900; }
+.app-error-actions button:last-child { background: #f2f1e9; color: #56675d; }
+.app-error-card details { margin-top: 14px; text-align: left; color: #7c8780; font-size: 8px; }
+.app-error-card details code { display: block; margin-top: 7px; padding: 9px; overflow-wrap: anywhere; border-radius: 10px; background: #f6f4ee; color: #675f59; }
+@media (max-width:600px) { .app-error-page { padding: 14px; } .app-error-card { padding: 24px 18px; border-radius: 24px; } .app-error-card h1 { font-size: 31px; } .app-error-card p { font-size: 11px; } .app-error-actions { grid-template-columns: 1fr; } }
