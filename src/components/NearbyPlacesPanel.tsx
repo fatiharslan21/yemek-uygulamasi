@@ -18,6 +18,10 @@ function distanceText(meters: number) {
   return `${(meters / 1000).toFixed(1).replace('.', ',')} km`
 }
 
+function cuisineText(value: string) {
+  return value.split(';').join(', ')
+}
+
 function categoryEmoji(category: NearbyPlaceCategory) {
   return category === 'Market' ? '🛒' : '🍽️'
 }
@@ -104,10 +108,10 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
                 <div className="nearby-place-icon">{categoryEmoji(place.category)}</div>
                 <div className="nearby-place-main">
                   <div className="nearby-place-title"><strong>{place.name}</strong><span>{place.subtype}</span></div>
-                  <p>{place.address || (place.cuisine ? `Mutfak: ${place.cuisine.replaceAll(';', ', ')}` : 'Adres etiketi OpenStreetMap kaydında yok.')}</p>
+                  <p>{place.address || (place.cuisine ? `Mutfak: ${cuisineText(place.cuisine)}` : 'Adres etiketi OpenStreetMap kaydında yok.')}</p>
                   <div className="nearby-place-meta">
                     <span>📏 {distanceText(place.distanceMeters)}</span>
-                    {place.cuisine && <span>🍴 {place.cuisine.replaceAll(';', ', ')}</span>}
+                    {place.cuisine && <span>🍴 {cuisineText(place.cuisine)}</span>}
                     {place.openingHours && <span>🕒 Saat bilgisi var</span>}
                   </div>
                 </div>
