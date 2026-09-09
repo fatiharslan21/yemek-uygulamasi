@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { RECIPE_CATALOG } from '../data/recipeCatalog'
 import { PlanHistoryPanel } from './PlanHistoryPanel'
+import { WeightTracker } from './WeightTracker'
 import { loadAppPreferences, saveAppPreferences, type AppPreferences } from '../services/appPreferences'
 import { loadFavoriteRecipeIds, saveFavoriteRecipeIds } from '../services/favoritesStorage'
 import type { UserPlanProfile } from '../types'
@@ -58,8 +59,10 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
         <article><span>💸 Haftalık bütçe</span><strong>{money(profile.budget)} ₺</strong><small>{profile.people} kişi</small></article>
         <article><span>📅 Plan süresi</span><strong>{profile.days} gün</strong><small>günde {profile.mealsPerDay} öğün</small></article>
         <article><span>🏠 Ev ağırlığı</span><strong>%{profile.mealSplit.home}</strong><small>sipariş %{profile.mealSplit.delivery}</small></article>
-        <article><span>👨‍🍳 Mutfak</span><strong>{profile.cookingEquipment.length}</strong><small>ekipman seçili</small></article>
+        <article><span>⚖️ Plan kilosu</span><strong>{profile.weight} kg</strong><small>hedef hesabında kullanılıyor</small></article>
       </section>
+
+      <WeightTracker startingWeight={profile.weight} />
 
       <section className="profile-section shell">
         <div className="profile-section-head"><div><span>♥</span><div><small>Kişiselleştirme</small><h2>Favori yemeklerin</h2><p>Favoriler yeni planlarda kontrollü biçimde daha yüksek şans alır; aynı yemeği sürekli tekrarlatmayız.</p></div></div><b>{favorites.length}</b></div>
@@ -79,7 +82,7 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
       <PlanHistoryPanel />
 
       <section className="profile-section shell profile-data-card">
-        <div><span>🔐</span><div><strong>Verilerin şu an bu cihazda</strong><p>Profil, plan geçmişi, favoriler ve günlük durumlar localStorage’da tutuluyor. Hesap/senkronizasyon katmanı canlıya geçiş fazında ayrıca tasarlanacak.</p></div></div>
+        <div><span>🔐</span><div><strong>Planın uygulamayı kapatsan da bu cihazda açık kalır</strong><p>Profil, aktif plan, günlük işaretler, favoriler, kilo kayıtları ve geçmiş planlar cihazda saklanır. Uygulamayı silmek veya uygulama verilerini temizlemek bu yerel kayıtları silebilir. Hesapla cihazlar arası senkronizasyon yayın fazında eklenecek.</p></div></div>
         <button type="button" onClick={onResetAll}>Tüm yerel veriyi sıfırla</button>
       </section>
     </main>
