@@ -27,6 +27,11 @@ function categoryEmoji(category: NearbyPlaceCategory) {
   return category === 'Market' ? '🛒' : '🍽️'
 }
 
+function externalWebsite(value: string) {
+  if (/^https?:\/\//i.test(value)) return value
+  return `https://${value}`
+}
+
 export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlacesPanelProps) {
   const { setPlaces: setSharedPlaces, preferredMarket, setPreferredMarket } = useNearbyData()
   const [status, setStatus] = useState<SearchState>('idle')
@@ -77,9 +82,9 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
     <section className="shell nearby-section">
       <div className="nearby-heading">
         <div>
-          <span className="eyebrow">📍 Nearby v0.2 • planla bağlı gerçek çevre</span>
+          <span className="eyebrow">📍 Nearby v0.3 • zenginleştirilmiş gerçek çevre</span>
           <h2>Mahallende neler var?</h2>
-          <p>Gerçek işletme adı, türü ve kuş uçuşu mesafeyi gösteriyoruz. Marketi alışveriş sepetine aday seçebilir; restoranları dışarı öğünlerine bağlayabilirsin.</p>
+          <p>Gerçek işletme adı, türü, mesafesi ve OpenStreetMap kaydında varsa açılış saati, web sitesi, telefon ve servis etiketlerini gösteriyoruz.</p>
         </div>
         <button type="button" className="nearby-search-button" disabled={status === 'loading'} onClick={runSearch}>
           {status === 'loading' ? 'Çevre taranıyor…' : status === 'success' ? '↻ Yeniden tara' : '⌖ Çevremi tara'}
@@ -121,7 +126,11 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
                     <div className="nearby-place-meta">
                       <span>📏 {distanceText(place.distanceMeters)}</span>
                       {place.cuisine && <span>🍴 {cuisineText(place.cuisine)}</span>}
-                      {place.openingHours && <span>🕒 Saat bilgisi var</span>}
+                      {place.openingHours && <span title={place.openingHours}>🕒 {place.openingHours}</span>}
+                      {place.delivery === true && <span>🛵 Paket servis</span>}
+                      {place.takeaway === true && <span>🥡 Gel-al</span>}
+                      {place.website && <span>🌐 Web</span>}
+                      {place.phone && <span>☎ Telefon</span>}
                     </div>
                   </div>
                   <div className="nearby-place-actions">
@@ -130,6 +139,8 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
                         {marketSelected ? '✓ Sepet marketi' : 'Sepet için seç'}
                       </button>
                     )}
+                    {place.website && <a className="nearby-map-link" href={externalWebsite(place.website)} target="_blank" rel="noreferrer">Web sitesi ↗</a>}
+                    {place.phone && <a className="nearby-map-link" href={`tel:${place.phone}`}>Ara ☎</a>}
                     <a className="nearby-map-link" href={`https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`} target="_blank" rel="noreferrer">Haritada aç ↗</a>
                   </div>
                 </article>
@@ -142,11 +153,11 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
       {preferredMarket && (
         <div className="nearby-selection-note">
           <span>🛒</span>
-          <div><strong>{preferredMarket.name} sepet marketi olarak seçildi.</strong><p>Henüz ürün bazlı gerçek stok/fiyat bağlamadığımız için toplam maliyet demo katalogdan geliyor; işletme ve mesafe ise gerçek çevre verisidir.</p></div>
+          <div><strong>{preferredMarket.name} sepet marketi olarak seçildi.</strong><p>Market ve mesafe gerçek çevre verisidir. Alışveriş sekmesindeki Fiyat İstihbaratı bölümü, canlı fiyat sağlayıcısı gelene kadar bu gerçek marketler üzerinde açıkça etiketlenmiş simülasyon senaryosu çalıştırır.</p></div>
         </div>
       )}
 
-      <div className="nearby-footnote">🗺️ İşletme verisi © OpenStreetMap katkıcıları. Mesafe şu an kuş uçuşudur; yürüyüş/sürüş mesafesi sonraki rota katmanında hesaplanacak.</div>
+      <div className="nearby-footnote">🗺️ İşletme verisi © OpenStreetMap katkıcıları. OSM kayıtları eksik veya güncel olmayabilir. Mesafe şu an kuş uçuşudur; yürüyüş/sürüş mesafesi rota katmanında hesaplanacak.</div>
     </section>
   )
 }
