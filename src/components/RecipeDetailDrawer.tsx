@@ -1,6 +1,9 @@
+import { useMemo, useState } from 'react'
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
+import { getCookingGuides, guideIsAvailable } from '../services/cookingGuides'
 import type { PlannedMeal, Recipe, UserPlanProfile, WeeklyPlan } from '../types'
 import '../recipe-detail.css'
+import '../kitchen.css'
 
 type RecipeDetailDrawerProps = {
   meal: PlannedMeal
@@ -18,52 +21,24 @@ function quantityText(quantity: number, unit: 'g' | 'ml' | 'adet') {
   return `${Math.round(quantity)} ${unit}`
 }
 
-function prepMinutes(recipe: Recipe | undefined, meal: PlannedMeal) {
-  if (meal.source !== 'Evde') return null
-  if (meal.slot === 'Ara öğün' || meal.slot === 'Gece öğünü') return 5
-  if (recipe?.tags.some((tag) => ['hızlı', 'pratik'].includes(tag))) return 10
-  if (recipe?.tags.includes('meal prep')) return 25
-  return Math.min(40, 15 + ((recipe?.ingredients.length ?? 2) * 4))
-}
-
 function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile: UserPlanProfile, plan: WeeklyPlan) {
   const reasons: Array<{ emoji: string; title: string; detail: string }> = []
   const totalMeals = plan.days.reduce((sum, day) => sum + day.meals.length, 0)
   const averageMealBudget = profile.budget / Math.max(1, totalMeals)
   const proteinShare = Math.round(meal.protein / Math.max(1, plan.nutritionTargets.protein) * 100)
 
-  reasons.push({
-    emoji: '🥑',
-    title: `${profile.diet} filtrelerinden geçti`,
-    detail: 'Plan motoru önce beslenme tipini ve seçtiğin hassasiyetleri kontrol ediyor.',
-  })
+  reasons.push({ emoji: '🥑', title: `${profile.diet} filtrelerinden geçti`, detail: 'Plan motoru önce beslenme tipini ve seçtiğin hassasiyetleri kontrol ediyor.' })
 
   if (meal.estimatedPrice <= averageMealBudget * 1.15) {
-    reasons.push({
-      emoji: '💸',
-      title: 'Öğün bütçesiyle uyumlu',
-      detail: `Bu öğünün yaklaşık maliyeti, planındaki öğün başı bütçe bandına yakın veya altında.`,
-    })
+    reasons.push({ emoji: '💸', title: 'Öğün bütçesiyle uyumlu', detail: 'Bu öğünün yaklaşık maliyeti, planındaki öğün başı bütçe bandına yakın veya altında.' })
   } else {
-    reasons.push({
-      emoji: '⚖️',
-      title: 'Daha pahalı ama hafta içinde dengeleniyor',
-      detail: 'Lokma pahalı bir öğünü ancak diğer günlerdeki daha ekonomik seçimlerle toplam bütçeyi dengeleyebiliyorsa tutuyor.',
-    })
+    reasons.push({ emoji: '⚖️', title: 'Daha pahalı ama hafta içinde dengeleniyor', detail: 'Lokma pahalı bir öğünü ancak diğer günlerdeki daha ekonomik seçimlerle toplam bütçeyi dengeleyebiliyorsa tutuyor.' })
   }
 
   if (proteinShare >= 20) {
-    reasons.push({
-      emoji: '💪',
-      title: `Protein hedefinin yaklaşık %${proteinShare}'ünü karşılıyor`,
-      detail: 'Özellikle kilo verme ve bulk hedeflerinde protein puanı seçim sırasında daha yüksek ağırlık alıyor.',
-    })
+    reasons.push({ emoji: '💪', title: `Protein hedefinin yaklaşık %${proteinShare}'ünü karşılıyor`, detail: 'Özellikle kilo verme ve bulk hedeflerinde protein puanı seçim sırasında daha yüksek ağırlık alıyor.' })
   } else {
-    reasons.push({
-      emoji: '🔥',
-      title: 'Günlük enerji dağılımına uyuyor',
-      detail: 'Kalori yükü kahvaltı, öğle, ara öğün ve akşam için belirlenen paylara göre değerlendiriliyor.',
-    })
+    reasons.push({ emoji: '🔥', title: 'Günlük enerji dağılımına uyuyor', detail: 'Kalori yükü kahvaltı, öğle, ara öğün ve akşam için belirlenen paylara göre değerlendiriliyor.' })
   }
 
   const reused = (recipe?.ingredients ?? [])
@@ -71,52 +46,31 @@ function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile:
     .filter((item) => item && item.usedInMeals >= 2)
 
   if (reused.length > 0) {
-    reasons.push({
-      emoji: '♻️',
-      title: `${reused.length} malzemesi başka öğünlerle ortak`,
-      detail: 'Aynı market paketini hafta içinde tekrar kullanmak maliyeti ve elde kalan ürünü azaltmaya yardımcı oluyor.',
-    })
+    reasons.push({ emoji: '♻️', title: `${reused.length} malzemesi başka öğünlerle ortak`, detail: 'Aynı market paketini hafta içinde tekrar kullanmak maliyeti ve elde kalan ürünü azaltmaya yardımcı oluyor.' })
   }
 
-  const sourceRatio = meal.source === 'Evde'
-    ? profile.mealSplit.home
-    : meal.source === 'Sipariş'
-      ? profile.mealSplit.delivery
-      : profile.mealSplit.dineOut
-
-  reasons.push({
-    emoji: meal.source === 'Evde' ? '🏠' : meal.source === 'Sipariş' ? '🛵' : '🍽️',
-    title: `${meal.source} tercihinle eşleşiyor`,
-    detail: `Planında bu yemek biçimine yaklaşık %${sourceRatio} pay ayırdın.`,
-  })
+  const sourceRatio = meal.source === 'Evde' ? profile.mealSplit.home : meal.source === 'Sipariş' ? profile.mealSplit.delivery : profile.mealSplit.dineOut
+  reasons.push({ emoji: meal.source === 'Evde' ? '🏠' : meal.source === 'Sipariş' ? '🛵' : '🍽️', title: `${meal.source} tercihinle eşleşiyor`, detail: `Planında bu yemek biçimine yaklaşık %${sourceRatio} pay ayırdın.` })
 
   return reasons.slice(0, 5)
 }
 
-function preparationSteps(recipe: Recipe | undefined, meal: PlannedMeal, people: number) {
-  if (meal.source !== 'Evde') {
-    return [
-      'Konum ve gerçek işletme katmanı bağlandığında Lokma bu öğün için çevrendeki uygun restoranları burada listeleyecek.',
-      'Restoran seçildiğinde fiyat, mesafe ve mümkünse menü besin bilgisi bu öğün kartına geri yazılacak.',
-    ]
-  }
-
-  const ingredientNames = (recipe?.ingredients ?? [])
-    .map((item) => INGREDIENT_BY_ID[item.ingredientId]?.name)
-    .filter(Boolean)
-
+function outsidePreparationSteps() {
   return [
-    `${people} kişi için gerekli malzemeleri ölç ve hazırla${ingredientNames.length ? `: ${ingredientNames.slice(0, 4).join(', ')}${ingredientNames.length > 4 ? '…' : ''}` : '.'}`,
-    'Ana bileşenleri uygun pişirme yöntemiyle hazırla; sebze ve yan bileşenleri son aşamada birleştir.',
-    'Porsiyonlara ayır, kalan uygun malzemeleri haftadaki diğer Lokma tarifleri için sakla.',
+    'Nearby katmanı bu öğün için çevrendeki uygun restoranları gerçek konum verisiyle eşleştirmeye başlayacak.',
+    'İşletme seçildiğinde ileride fiyat, mesafe ve destekleniyorsa menü besin bilgisi bu öğüne geri yazılacak.',
   ]
 }
 
 export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwap, onToggleLock }: RecipeDetailDrawerProps) {
   const recipe = RECIPE_CATALOG.find((item) => item.id === meal.recipeId)
   const whyReasons = buildWhyReasons(meal, recipe, profile, plan)
-  const minutes = prepMinutes(recipe, meal)
-  const steps = preparationSteps(recipe, meal, profile.people)
+  const cookingGuides = useMemo(() => getCookingGuides(recipe, meal, profile.people), [recipe, meal, profile.people])
+  const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null)
+  const selectedGuide = cookingGuides.find((item) => item.id === selectedGuideId)
+    ?? cookingGuides.find((item) => guideIsAvailable(item, profile.cookingEquipment))
+    ?? cookingGuides[0]
+  const selectedGuideAvailable = selectedGuide ? guideIsAvailable(selectedGuide, profile.cookingEquipment) : false
 
   return (
     <div className="recipe-detail-overlay" role="presentation" onMouseDown={onClose}>
@@ -124,11 +78,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
         <div className="drawer-handle" />
         <header className="recipe-detail-header">
           <div className="recipe-detail-hero-icon">{meal.emoji}</div>
-          <div className="recipe-detail-heading">
-            <span>{meal.slot} • {meal.source}</span>
-            <h2>{meal.title}</h2>
-            <p>{meal.subtitle}</p>
-          </div>
+          <div className="recipe-detail-heading"><span>{meal.slot} • {meal.source}</span><h2>{meal.title}</h2><p>{meal.subtitle}</p></div>
           <button className="recipe-close-button" type="button" onClick={onClose} aria-label="Detayı kapat">×</button>
         </header>
 
@@ -136,7 +86,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
           <div><span>🔥 Kalori</span><strong>{meal.calories} kcal</strong></div>
           <div><span>💪 Protein</span><strong>{meal.protein} g</strong></div>
           <div><span>💸 Tahmin</span><strong>≈ {Math.round(meal.estimatedPrice).toLocaleString('tr-TR')} ₺</strong></div>
-          <div><span>⏱️ Süre</span><strong>{minutes ? `≈ ${minutes} dk` : 'Sipariş'}</strong></div>
+          <div><span>⏱️ Süre</span><strong>{meal.source === 'Evde' ? (selectedGuide ? `≈ ${selectedGuide.minutes} dk` : 'Tarife göre') : 'Sipariş'}</strong></div>
         </div>
 
         <section className="recipe-detail-section">
@@ -156,28 +106,51 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
                 )
               })}
             </div>
-          ) : (
-            <div className="recipe-empty-note">Bu dışarı öğününün gerçek içerik ve porsiyon bilgisi restoran veri katmanı bağlandığında gelecek.</div>
-          )}
+          ) : <div className="recipe-empty-note">Bu dışarı öğününün gerçek içerik ve porsiyon bilgisi restoran veri katmanı bağlandığında gelecek.</div>}
           {recipe?.allergens.length ? <div className="recipe-allergen-note">⚠️ Katalog alerjen etiketi: {recipe.allergens.join(', ')}</div> : null}
         </section>
 
         <section className="recipe-detail-section why-section">
           <div className="recipe-section-title"><span>🧠</span><div><h3>Lokma bunu neden seçti?</h3><p>Plan motorunun bu öğüne verdiği başlıca artılar</p></div></div>
-          <div className="why-reason-list">
-            {whyReasons.map((reason) => (
-              <article key={reason.title}><span>{reason.emoji}</span><div><strong>{reason.title}</strong><p>{reason.detail}</p></div></article>
-            ))}
-          </div>
+          <div className="why-reason-list">{whyReasons.map((reason) => <article key={reason.title}><span>{reason.emoji}</span><div><strong>{reason.title}</strong><p>{reason.detail}</p></div></article>)}</div>
         </section>
 
-        <section className="recipe-detail-section">
-          <div className="recipe-section-title"><span>{meal.source === 'Evde' ? '👨‍🍳' : '📍'}</span><div><h3>{meal.source === 'Evde' ? 'Hazırlama akışı' : 'İşletme bağlantısı'}</h3><p>{meal.source === 'Evde' ? 'Şimdilik prototip seviyesinde kısa hazırlama özeti' : 'Bir sonraki konum fazında canlı veriyle dolacak'}</p></div></div>
-          <ol className="recipe-step-list">
-            {steps.map((step) => <li key={step}>{step}</li>)}
-          </ol>
-          {meal.source === 'Evde' && <p className="recipe-prototype-note">Not: Bu bölüm şu an tarif kataloğundaki bileşenlerden üretilen prototip hazırlama akışıdır; final sürümde tarif bazlı doğrulanmış adımlar tutulacak.</p>}
-        </section>
+        {meal.source === 'Evde' ? (
+          <section className="recipe-detail-section cooking-method-section">
+            <div className="recipe-section-title"><span>👨‍🍳</span><div><h3>Nasıl pişirmek istersin?</h3><p>Aynı öğün için mutfağına uygun farklı hazırlama senaryoları</p></div></div>
+
+            <div className="cooking-equipment-summary">
+              {(profile.cookingEquipment.length ? profile.cookingEquipment : ['Ekipman seçilmedi']).map((item) => <span key={item}>✓ {item}</span>)}
+            </div>
+
+            <div className="cooking-method-tabs">
+              {cookingGuides.map((guide) => {
+                const available = guideIsAvailable(guide, profile.cookingEquipment)
+                const active = selectedGuide?.id === guide.id
+                return <button key={guide.id} type="button" className={`cooking-method-tab ${active ? 'active' : ''} ${available ? '' : 'unavailable'}`} onClick={() => setSelectedGuideId(guide.id)}><span>{guide.emoji}</span>{guide.label}{!available && <em>ekipman eksik</em>}</button>
+              })}
+            </div>
+
+            {selectedGuide && (
+              <div className="cooking-guide-card">
+                <div className="cooking-guide-top"><div><strong>{selectedGuide.emoji} {selectedGuide.label}</strong><p>{selectedGuide.summary}</p></div><span>≈ {selectedGuide.minutes} dk</span></div>
+                <div className="cooking-guide-requirements">
+                  {selectedGuide.equipment.length === 0
+                    ? <span>✨ Ek ekipman gerektirmez</span>
+                    : selectedGuide.equipment.map((equipment) => <span key={equipment} className={profile.cookingEquipment.includes(equipment) ? '' : 'missing'}>{profile.cookingEquipment.includes(equipment) ? '✓' : '＋'} {equipment}</span>)}
+                </div>
+                {!selectedGuideAvailable && selectedGuide.equipment.length > 0 && <div className="cooking-method-note">Bu yöntem kullanılabilir bir alternatif ama gerekli ekipmanların tamamı mutfak profilinde seçili değil. Tercihleri düzenleyerek ekleyebilirsin.</div>}
+                <ol className="recipe-step-list">{selectedGuide.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+                {selectedGuide.note && <div className="cooking-method-note">⚠️ {selectedGuide.note}</div>}
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="recipe-detail-section">
+            <div className="recipe-section-title"><span>📍</span><div><h3>İşletme bağlantısı</h3><p>Nearby v0.1 gerçek çevre verisini dashboard'a getiriyor</p></div></div>
+            <ol className="recipe-step-list">{outsidePreparationSteps().map((step) => <li key={step}>{step}</li>)}</ol>
+          </section>
+        )}
 
         <footer className="recipe-detail-footer">
           <button type="button" className="drawer-swap-button" disabled={locked} onClick={onSwap}>{locked ? '🔒 Önce kilidi aç' : '↻ Bu öğünü değiştir'}</button>
