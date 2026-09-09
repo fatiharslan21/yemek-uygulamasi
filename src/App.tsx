@@ -5,12 +5,12 @@ import { PlanHistoryPanel } from './components/PlanHistoryPanel'
 import { PlanLocationGate } from './components/PlanLocationGate'
 import { ProfileHub } from './components/ProfileHub'
 import { StarterPlanDashboard } from './components/StarterPlanDashboard'
-import { clearAppPreferences, loadAppPreferences } from './services/appPreferences'
-import { clearAppState, loadSavedAppState, saveAppState } from './services/appStorage'
-import { clearFavoriteRecipeIds } from './services/favoritesStorage'
-import { clearPlanHistory } from './services/planHistoryStorage'
+import { initializeAdPolicy } from './services/adPolicy'
+import { loadAppPreferences } from './services/appPreferences'
+import { loadSavedAppState, saveAppState } from './services/appStorage'
+import { clearAllLokmaLocalData } from './services/localData'
 import { localDateKey } from './services/planCalendar'
-import { clearPlanSession, savePlanSession } from './services/planSessionStorage'
+import { savePlanSession } from './services/planSessionStorage'
 import type { UserPlanProfile, WeeklyPlan } from './types'
 import './onboarding.css'
 import './location-ui.css'
@@ -61,6 +61,7 @@ function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
+    initializeAdPolicy()
     applyPreferences()
     window.addEventListener('lokma:preferences-changed', applyPreferences)
     window.addEventListener('lokma:renew-plan', requestRenewalApproval)
@@ -113,11 +114,7 @@ function App() {
   }
 
   const resetLocalApp = () => {
-    clearAppState()
-    clearPlanSession()
-    clearFavoriteRecipeIds()
-    clearPlanHistory()
-    clearAppPreferences()
+    clearAllLokmaLocalData()
     document.body.classList.remove('lokma-reduced-motion')
     setProfile(initialProfile)
     setHasCompletedOnboarding(false)
@@ -194,7 +191,7 @@ function App() {
 
       {hasCompletedOnboarding && (
         <section className="shell local-profile-card">
-          <div><span>💾</span><div><strong>Bu cihazdaki Lokma verilerini sıfırla</strong><p>İlk kullanım deneyimini baştan test etmek istersen profil, son plan, favoriler ve plan geçmişi birlikte silinir.</p></div></div>
+          <div><span>💾</span><div><strong>Bu cihazdaki Lokma verilerini sıfırla</strong><p>İlk kullanım deneyimini baştan test etmek istersen profil, son plan, favoriler, kilo kayıtları, sepet durumları ve plan geçmişi birlikte silinir.</p></div></div>
           <button type="button" onClick={resetLocalApp}>Tüm yerel veriyi sıfırla</button>
         </section>
       )}
