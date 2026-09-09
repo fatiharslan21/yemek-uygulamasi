@@ -37,11 +37,15 @@ Tarayıcıda Vite'ın verdiği local adresi aç. Varsayılan adres genellikle `h
 - kilitli öğünleri koruyarak haftayı yeniden karıştırma
 - tarif detay çekmecesi
 - aynı ev yemeği için alternatif pişirme senaryoları (ör. Ocak / Fırın / Airfryer)
-- **Nearby v0.2:** OpenStreetMap / Overpass ile çevredeki gerçek market ve restoran isimleri, türleri ve kuş uçuşu mesafeleri
+- **Nearby v0.3:** OpenStreetMap / Overpass ile çevredeki gerçek market ve restoran isimleri, türleri ve kuş uçuşu mesafeleri
+- OSM kaydında varsa açılış saati, web sitesi, telefon, paket servis / gel-al etiketleri
 - gerçek yakındaki restoranları sipariş / dışarı öğünlerine bağlama
 - seçilen restoranı haftalık öğün kartında gösterme
 - gerçek yakındaki marketlerden birini alışveriş sepeti marketi olarak seçme
-- seçilen / en yakın marketi alışveriş sekmesinde sepetle birlikte gösterme
+- **Fiyat İstihbaratı v0.1:** yakın gerçek marketler üzerinde açıkça etiketlenmiş fiyat simülasyonu
+- simülasyon üzerinden “en ucuz tek market” karşılaştırması
+- en fazla 2 markete bölünmüş sepet optimizasyonu
+- market seçimini en çok etkileyen fiyat oynaklığı yüksek ürünleri gösterme
 
 ## 🧠 Plan motorunun mevcut girdileri
 
@@ -57,16 +61,28 @@ Tarayıcıda Vite'ın verdiği local adresi aç. Varsayılan adres genellikle `h
 
 ## 📍 Konum ve işletme verisi
 
-Şu anda gerçek konum ve gerçek işletme keşfi vardır. Nearby v0.2, anahtar gerektirmeyen açık veri kaynaklarıyla çalışır:
+Şu anda gerçek konum ve gerçek işletme keşfi vardır. Nearby v0.3, anahtar gerektirmeyen açık veri kaynaklarıyla çalışır:
 
 - OpenStreetMap Nominatim: adres / koordinat çözümleme
 - OpenStreetMap Overpass: yakındaki market ve restoran keşfi
 
 Restoran adayları öğünün adı / etiketi, işletmenin mutfak türü ve mesafesi birlikte değerlendirilerek sıralanır. Kullanıcı bir restoranı doğrudan dışarı / sipariş öğününe bağlayabilir. Market tarafında da yakındaki gerçek işletmelerden biri sepet marketi olarak seçilebilir.
 
-Bu kaynakların kapsaması bölgeye göre değişebilir. Market ürün fiyatları ve restoran menü fiyatları henüz gerçek veri değildir.
+OpenStreetMap kayıtları eksik veya güncel olmayabilir. İşletme meta bilgileri sadece OSM kaydında mevcutsa gösterilir.
 
-## 💸 Şimdilik demo kalan veri
+## 💸 Fiyat veri sözleşmesi
+
+Lokma fiyatın kaynağını veri modelinde ayırır. Böylece simülasyon fiyatı yanlışlıkla canlı fiyatmış gibi gösterilmez.
+
+Şu an üç veri sınıfı hedefleniyor:
+
+- `simulated`: geliştirme / optimizasyon senaryosu
+- `manual`: kullanıcı veya operasyon tarafından doğrulanmış manuel fiyat girişi (sonraki faz)
+- `live`: gerçek market / menü fiyat sağlayıcısından gelen veri (sonraki faz)
+
+**Fiyat İstihbaratı v0.1** şu anda `simulated` çalışır. Market adı ve mesafesi gerçek Nearby verisidir; ürün fiyatı değildir.
+
+## 🧪 Şimdilik demo / simülasyon kalan veri
 
 - market ürün fiyatları
 - restoran / sipariş fiyatları
@@ -76,10 +92,10 @@ Bu kaynakların kapsaması bölgeye göre değişebilir. Market ürün fiyatlar�
 
 ## 🗺️ Sıradaki büyük geliştirmeler
 
-1. gerçek restoran menü / ürün eşleştirme katmanı
-2. gerçek market fiyat kaynakları ve fiyat normalizasyonu
-3. “en ucuz tek market” ve “en ucuz çoklu market sepeti” optimizasyonu
-4. yürüyüş / sürüş mesafesi ve rota maliyeti
+1. gerçek market ürün sağlayıcısı / fiyat normalizasyon adaptörleri
+2. gerçek restoran menü / ürün eşleştirme katmanı
+3. kullanıcı doğrulamalı manuel fiyat girişi ve fiyat geçmişi
+4. çoklu market optimizasyonuna yürüyüş/sürüş zamanı ve yol maliyeti ekleme
 5. tarif kataloğunu büyütme ve tarif bazlı doğrulanmış pişirme adımları
 6. favoriler, geçmiş planlar ve kullanıcı geri bildiriminden öğrenme
 7. batch cooking / meal-prep zamanı ve haftalık mutfak takvimi
@@ -92,5 +108,5 @@ Bu kaynakların kapsaması bölgeye göre değişebilir. Market ürün fiyatlar�
 - hafif mikro animasyonlar
 - bütçenin her zaman görünür olması
 - “neden bunu önerdin?” açıklanabilirliği
-- gerçek veri ile demo verisinin açıkça ayrılması
+- gerçek veri ile demo / simülasyon verisinin açıkça ayrılması
 - kullanıcının elindeki ekipmana ve gerçek çevresine uyan öneriler
