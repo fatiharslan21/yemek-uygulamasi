@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNearbyData } from '../context/NearbyDataContext'
 import { geocodePlanLocation } from '../services/forwardGeocode'
 import { searchNearbyPlaces, type NearbyPlace, type NearbyPlaceCategory } from '../services/nearbyPlaces'
 import type { BrowserCoordinates } from '../services/browserLocation'
@@ -27,6 +28,7 @@ function categoryEmoji(category: NearbyPlaceCategory) {
 }
 
 export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlacesPanelProps) {
+  const { setPlaces: setSharedPlaces, preferredMarket, setPreferredMarket } = useNearbyData()
   const [status, setStatus] = useState<SearchState>('idle')
   const [places, setPlaces] = useState<NearbyPlace[]>([])
   const [activeCategory, setActiveCategory] = useState<NearbyPlaceCategory>('Market')
@@ -56,6 +58,7 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
       setSearchCenter(center)
       const result = await searchNearbyPlaces(center, 1800)
       setPlaces(result)
+      setSharedPlaces(result)
       setStatus('success')
       setMessage(result.length
         ? `Yaklaşık 1,8 km çevrede ${result.length} isimli işletme bulundu. Arama merkezi ${sourceText} üzerinden belirlendi.`
@@ -66,13 +69,17 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
     }
   }
 
+  const chooseMarket = (place: NearbyPlace) => {
+    setPreferredMarket(preferredMarket?.id === place.id ? undefined : place)
+  }
+
   return (
     <section className="shell nearby-section">
       <div className="nearby-heading">
         <div>
-          <span className="eyebrow">📍 Nearby v0.1 • gerçek çevre verisi</span>
+          <span className="eyebrow">📍 Nearby v0.2 • planla bağlı gerçek çevre</span>
           <h2>Mahallende neler var?</h2>
-          <p>Şimdilik OpenStreetMap verisiyle gerçek işletme adı, türü ve kuş uçuşu mesafeyi gösteriyoruz. Menü ve ürün fiyatları henüz bu katmanda yok.</p>
+          <p>Gerçek işletme adı, türü ve kuş uçuşu mesafeyi gösteriyoruz. Marketi alışveriş sepetine aday seçebilir; restoranları dışarı öğünlerine bağlayabilirsin.</p>
         </div>
         <button type="button" className="nearby-search-button" disabled={status === 'loading'} onClick={runSearch}>
           {status === 'loading' ? 'Çevre taranıyor…' : status === 'success' ? '↻ Yeniden tara' : '⌖ Çevremi tara'}
@@ -102,24 +109,41 @@ export function NearbyPlacesPanel({ profile, coords, locationLabel }: NearbyPlac
           </div>
 
           <div className="nearby-grid">
-            {visiblePlaces.map((place, index) => (
-              <article className="nearby-place-card" key={place.id}>
-                <div className="nearby-place-rank">{String(index + 1).padStart(2, '0')}</div>
-                <div className="nearby-place-icon">{categoryEmoji(place.category)}</div>
-                <div className="nearby-place-main">
-                  <div className="nearby-place-title"><strong>{place.name}</strong><span>{place.subtype}</span></div>
-                  <p>{place.address || (place.cuisine ? `Mutfak: ${cuisineText(place.cuisine)}` : 'Adres etiketi OpenStreetMap kaydında yok.')}</p>
-                  <div className="nearby-place-meta">
-                    <span>📏 {distanceText(place.distanceMeters)}</span>
-                    {place.cuisine && <span>🍴 {cuisineText(place.cuisine)}</span>}
-                    {place.openingHours && <span>🕒 Saat bilgisi var</span>}
+            {visiblePlaces.map((place, index) => {
+              const marketSelected = preferredMarket?.id === place.id
+              return (
+                <article className={`nearby-place-card ${marketSelected ? 'selected-business' : ''}`} key={place.id}>
+                  <div className="nearby-place-rank">{String(index + 1).padStart(2, '0')}</div>
+                  <div className="nearby-place-icon">{categoryEmoji(place.category)}</div>
+                  <div className="nearby-place-main">
+                    <div className="nearby-place-title"><strong>{place.name}</strong><span>{place.subtype}</span></div>
+                    <p>{place.address || (place.cuisine ? `Mutfak: ${cuisineText(place.cuisine)}` : 'Adres etiketi OpenStreetMap kaydında yok.')}</p>
+                    <div className="nearby-place-meta">
+                      <span>📏 {distanceText(place.distanceMeters)}</span>
+                      {place.cuisine && <span>🍴 {cuisineText(place.cuisine)}</span>}
+                      {place.openingHours && <span>🕒 Saat bilgisi var</span>}
+                    </div>
                   </div>
-                </div>
-                <a className="nearby-map-link" href={`https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`} target="_blank" rel="noreferrer">Haritada aç ↗</a>
-              </article>
-            ))}
+                  <div className="nearby-place-actions">
+                    {place.category === 'Market' && (
+                      <button type="button" className={`nearby-select-button ${marketSelected ? 'active' : ''}`} onClick={() => chooseMarket(place)}>
+                        {marketSelected ? '✓ Sepet marketi' : 'Sepet için seç'}
+                      </button>
+                    )}
+                    <a className="nearby-map-link" href={`https://www.openstreetmap.org/?mlat=${place.latitude}&mlon=${place.longitude}#map=18/${place.latitude}/${place.longitude}`} target="_blank" rel="noreferrer">Haritada aç ↗</a>
+                  </div>
+                </article>
+              )
+            })}
           </div>
         </>
+      )}
+
+      {preferredMarket && (
+        <div className="nearby-selection-note">
+          <span>🛒</span>
+          <div><strong>{preferredMarket.name} sepet marketi olarak seçildi.</strong><p>Henüz ürün bazlı gerçek stok/fiyat bağlamadığımız için toplam maliyet demo katalogdan geliyor; işletme ve mesafe ise gerçek çevre verisidir.</p></div>
+        </div>
       )}
 
       <div className="nearby-footnote">🗺️ İşletme verisi © OpenStreetMap katkıcıları. Mesafe şu an kuş uçuşudur; yürüyüş/sürüş mesafesi sonraki rota katmanında hesaplanacak.</div>
