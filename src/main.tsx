@@ -6,13 +6,17 @@ import { NearbyDataProvider } from './context/NearbyDataContext'
 import './styles.css'
 import './mobile-dashboard-v18.css'
 import './product-cleanup.css'
+import './accessibility.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AppErrorBoundary>
-      <NearbyDataProvider>
-        <App />
-      </NearbyDataProvider>
-    </AppErrorBoundary>
+    <a className="skip-link" href="#lokma-app-content">Ana içeriğe geç</a>
+    <div id="lokma-app-content" tabIndex={-1}>
+      <AppErrorBoundary>
+        <NearbyDataProvider>
+          <App />
+        </NearbyDataProvider>
+      </AppErrorBoundary>
+    </div>
   </React.StrictMode>,
 )
