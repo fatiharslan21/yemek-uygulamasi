@@ -1,0 +1,53 @@
+name: Android Shell Smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Web release QA
+        run: npm run qa:release
+
+      - name: Create Android shell
+        run: npx cap add android
+
+      - name: Sync web build into Android
+        run: npx cap sync android
+
+      - name: Verify package identity
+        shell: bash
+        run: |
+          grep -R "com.fatiharslan.lokma" android/app/build.gradle android/app/build.gradle.kts android/app/src/main/AndroidManifest.xml 2>/dev/null | head -1
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lokma-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 2
