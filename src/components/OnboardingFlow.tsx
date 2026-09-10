@@ -46,7 +46,6 @@ const splitByPreset: Record<MealStylePreset, UserPlanProfile['mealSplit']> = {
 }
 
 const allergyOptions = ['Gluten', 'Laktoz', 'Yumurta', 'Kuruyemiş', 'Deniz ürünü', 'Soya']
-const citySuggestions = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Kocaeli', 'Sakarya', 'Eskişehir']
 const kitchenEquipmentOptions: Array<{ value: CookingEquipment; emoji: string; detail: string }> = [
   { value: 'Ocak', emoji: '🍳', detail: 'Tencere ve tava tarifleri' },
   { value: 'Fırın', emoji: '🔥', detail: 'Tepsi ve fırın yemekleri' },
@@ -85,14 +84,13 @@ function estimateTargets(profile: UserPlanProfile) {
   }
   const calories = Math.max(1200, Math.round((maintenance + goalAdjustment[profile.goal]) / 50) * 50)
   const proteinMultiplier = profile.goal === 'Bulk' || profile.goal === 'Kilo ver' ? 1.8 : 1.5
-  const protein = Math.round(profile.weight * proteinMultiplier)
-  return { calories, protein }
+  return { calories, protein: Math.round(profile.weight * proteinMultiplier) }
 }
 
 export function OnboardingFlow({ initialProfile, onComplete, onExit }: OnboardingFlowProps) {
   const [step, setStep] = useState(0)
   const [profile, setProfile] = useState<UserPlanProfile>(initialProfile)
-  const totalSteps = 7
+  const totalSteps = 6
   const targets = useMemo(() => estimateTargets(profile), [profile])
 
   const patch = <K extends keyof UserPlanProfile,>(key: K, value: UserPlanProfile[K]) => {
@@ -117,10 +115,10 @@ export function OnboardingFlow({ initialProfile, onComplete, onExit }: Onboardin
 
   const goNext = () => setStep((current) => Math.min(current + 1, totalSteps - 1))
   const goBack = () => setStep((current) => Math.max(current - 1, 0))
-
   const progress = ((step + 1) / totalSteps) * 100
   const budgetPerDay = Math.round(profile.budget / Math.max(1, profile.days))
   const budgetPerPersonDay = Math.round(budgetPerDay / Math.max(1, profile.people))
+  const locationText = [profile.neighborhood, profile.district, profile.city].filter(Boolean).join(', ')
 
   return (
     <main className="onboarding-page">
@@ -138,10 +136,10 @@ export function OnboardingFlow({ initialProfile, onComplete, onExit }: Onboardin
           {step === 0 && (
             <div className="step-panel welcome-step">
               <div className="welcome-art" aria-hidden="true"><span className="welcome-plate">🥗</span><span className="float-food food-a">🍋</span><span className="float-food food-b">🍅</span><span className="float-food food-c">🥑</span><span className="float-food food-d">🥖</span></div>
-              <span className="step-kicker">👋 Tanışalım</span>
+              <span className="step-kicker">✓ Konum tamam • şimdi seni tanıyalım</span>
               <h1>Sana gerçekten uyan bir <em>yemek haftası</em> kuralım.</h1>
-              <p>Yaklaşık 2 dakika sürecek. Bütçeni, hedefini ve nasıl yemek istediğini anlayıp planın temelini oluşturacağız.</p>
-              <div className="welcome-benefits"><span>💸 Bütçene göre</span><span>🎯 Hedefine göre</span><span>📍 Konumuna göre</span></div>
+              <p>Yaklaşık 2 dakika sürecek. Bütçeni, hedefini ve nasıl yemek istediğini anlayıp önce menünü göstereceğiz; sen onaylamadan plan başlamayacak.</p>
+              <div className="welcome-benefits"><span>💸 Bütçene göre</span><span>🎯 Hedefine göre</span><span>📍 {locationText || 'Seçtiğin çevreye göre'}</span></div>
               <button className="primary-onboarding" type="button" onClick={goNext}>Başlayalım <span>→</span></button>
             </div>
           )}
@@ -172,40 +170,35 @@ export function OnboardingFlow({ initialProfile, onComplete, onExit }: Onboardin
             <div className="step-panel">
               <span className="step-kicker">🥑 Damak zevkin + mutfağın</span>
               <h2>Neleri yiyelim, evde nelerle pişirelim?</h2>
-              <p className="step-description">Önerileri hem beslenme tercihine hem de evde gerçekten kullanabildiğin ekipmanlara göre geliştireceğiz.</p>
-
+              <p className="step-description">Önerileri hem beslenme tercihine hem de evde gerçekten kullanabildiğin ekipmanlara göre düzenliyoruz.</p>
               <span className="field-heading">Beslenme tipi</span>
               <div className="choice-grid compact diet-grid">
                 {(['Hepçil', 'Vejetaryen', 'Vegan', 'Pesketaryen'] as DietType[]).map((diet) => <ChoiceCard key={diet} value={diet} current={profile.diet} emoji={diet === 'Hepçil' ? '🍗' : diet === 'Vejetaryen' ? '🥦' : diet === 'Vegan' ? '🌱' : '🐟'} title={diet} onSelect={(value) => patch('diet', value)} />)}
               </div>
-
               <div className="subsection"><span className="field-heading">Alerji / hassasiyet <small>Birden fazla seçebilirsin</small></span><div className="tag-selector">
                 {allergyOptions.map((allergy) => <button key={allergy} type="button" className={profile.allergies.includes(allergy) ? 'selected' : ''} onClick={() => toggleAllergy(allergy)}>{profile.allergies.includes(allergy) ? '✓ ' : '+ '}{allergy}</button>)}
               </div></div>
-
               <label className="input-field subsection"><span>Özellikle sevmediğin şeyler</span><textarea value={profile.dislikes} onChange={(e) => patch('dislikes', e.target.value)} placeholder="Örn. mantar, kereviz, çok acı yemekler..." /></label>
-
               <div className="form-grid two-col subsection">
                 <div className="binary-card"><div><strong>🌞 Kahvaltı yapıyor musun?</strong><small>Planın sabah öğünleri buna göre ayarlanır.</small></div><div className="segmented"><button type="button" className={profile.breakfast ? 'active' : ''} onClick={() => patch('breakfast', true)}>Evet</button><button type="button" className={!profile.breakfast ? 'active' : ''} onClick={() => patch('breakfast', false)}>Hayır</button></div></div>
-                <div className="binary-card"><div><strong>🍽️ Günde kaç ana öğün?</strong><small>Atıştırmalıkları daha sonra ayrıca ekleyeceğiz.</small></div><div className="segmented three"><button type="button" className={profile.mealsPerDay === 2 ? 'active' : ''} onClick={() => patch('mealsPerDay', 2)}>2</button><button type="button" className={profile.mealsPerDay === 3 ? 'active' : ''} onClick={() => patch('mealsPerDay', 3)}>3</button><button type="button" className={profile.mealsPerDay === 4 ? 'active' : ''} onClick={() => patch('mealsPerDay', 4)}>4</button></div></div>
+                <div className="binary-card"><div><strong>🍽️ Günde kaç ana öğün?</strong><small>Plan yoğunluğu buna göre ayarlanır.</small></div><div className="segmented three"><button type="button" className={profile.mealsPerDay === 2 ? 'active' : ''} onClick={() => patch('mealsPerDay', 2)}>2</button><button type="button" className={profile.mealsPerDay === 3 ? 'active' : ''} onClick={() => patch('mealsPerDay', 3)}>3</button><button type="button" className={profile.mealsPerDay === 4 ? 'active' : ''} onClick={() => patch('mealsPerDay', 4)}>4</button></div></div>
               </div>
-
               <div className="subsection">
-                <span className="field-heading">Evde hangi ekipmanlar var? <small>Tarif detayındaki yöntemler buna göre işaretlenecek</small></span>
+                <span className="field-heading">Evde hangi ekipmanlar var? <small>Birden fazla seçebilirsin</small></span>
                 <div className="kitchen-equipment-grid">
                   {kitchenEquipmentOptions.map((item) => {
                     const selected = profile.cookingEquipment.includes(item.value)
                     return <button key={item.value} type="button" className={`kitchen-equipment-option ${selected ? 'selected' : ''}`} onClick={() => toggleEquipment(item.value)}><span>{item.emoji}</span><div><strong>{item.value}</strong><small>{item.detail}</small></div><b>{selected ? '✓' : '+'}</b></button>
                   })}
                 </div>
-                <div className="kitchen-hint">👨‍🍳 <span>Bir yemek birden fazla yöntemle yapılabiliyorsa Lokma sana alternatif senaryolar gösterecek. Örneğin tavuklu bir öğünde klasik ocak, fırın destekli veya airfryer destekli akış seçebilirsin.</span></div>
+                <div className="kitchen-hint">👨‍🍳 <span>Aynı yemek farklı yöntemlerle yapılabiliyorsa tarif detayında ocak, fırın, airfryer veya diğer uygun seçenekleri ayrı ayrı görebilirsin.</span></div>
               </div>
             </div>
           )}
 
           {step === 3 && (
             <div className="step-panel budget-step">
-              <span className="step-kicker">💸 Bütçe zamanı</span><h2>Bu plan için ne kadar ayırıyoruz?</h2><p className="step-description">Lokma bu rakamı sadece harcamaz; öğünleri, alışverişi ve dışarıdan yemeyi bunun içinde optimize eder.</p>
+              <span className="step-kicker">💸 Bütçe zamanı</span><h2>Bu plan için ne kadar ayırıyoruz?</h2><p className="step-description">Lokma öğünleri, alışverişi ve dışarıdan yemeyi bu sınırın içinde dengelemeye çalışır.</p>
               <div className="budget-hero-input"><span>Haftalık yemek bütçesi</span><div><input type="number" min="250" step="100" value={profile.budget} onChange={(e) => patch('budget', Number(e.target.value))} /><strong>₺</strong></div><input className="budget-range" type="range" min="500" max="10000" step="100" value={Math.min(10000, Math.max(500, profile.budget))} onChange={(e) => patch('budget', Number(e.target.value))} /><div className="range-labels"><span>500 ₺</span><span>10.000 ₺+</span></div></div>
               <div className="form-grid two-col subsection"><label className="input-field"><span>Kaç günlük plan?</span><select value={profile.days} onChange={(e) => patch('days', Number(e.target.value))}>{[3,4,5,6,7].map((day) => <option key={day} value={day}>{day} gün</option>)}</select></label><label className="input-field"><span>Kaç kişi?</span><select value={profile.people} onChange={(e) => patch('people', Number(e.target.value))}>{[1,2,3,4,5,6].map((people) => <option key={people} value={people}>{people} kişi</option>)}</select></label></div>
               <div className="budget-breakdown"><div><span>📆 Günlük toplam</span><strong>{budgetPerDay.toLocaleString('tr-TR')} ₺</strong></div><div><span>👤 Kişi başı / gün</span><strong>{budgetPerPersonDay.toLocaleString('tr-TR')} ₺</strong></div><div><span>🍽️ Tahmini ana öğün</span><strong>{profile.days * profile.mealsPerDay * profile.people} adet</strong></div></div>
@@ -214,48 +207,35 @@ export function OnboardingFlow({ initialProfile, onComplete, onExit }: Onboardin
 
           {step === 4 && (
             <div className="step-panel">
-              <span className="step-kicker">🍳 Ev mi, sipariş mi?</span><h2>Haftanın yemek karakterini seç.</h2><p className="step-description">Bunu daha sonra gün bazında değiştirebileceksin. Şimdilik Lokma'ya genel yönü veriyoruz.</p>
+              <span className="step-kicker">🍳 Ev mi, sipariş mi?</span><h2>Haftanın yemek karakterini seç.</h2><p className="step-description">Bunu daha sonra gün bazında değiştirebilirsin. Şimdilik Lokma'ya genel yönü veriyorsun.</p>
               <div className="style-presets">
                 <button type="button" className={profile.stylePreset === 'Ekonomik' ? 'selected' : ''} onClick={() => selectPreset('Ekonomik')}><span className="preset-emoji">🏠</span><strong>Ekonomik</strong><small>Evde pişirme ağırlıklı</small><div className="mini-split"><i style={{ width: '80%' }} /><i style={{ width: '15%' }} /><i style={{ width: '5%' }} /></div><b>%80 ev • %15 sipariş • %5 dışarı</b></button>
                 <button type="button" className={profile.stylePreset === 'Dengeli' ? 'selected' : ''} onClick={() => selectPreset('Dengeli')}><span className="preset-emoji">⚖️</span><strong>Dengeli</strong><small>Konfor ve bütçe ortası</small><div className="mini-split"><i style={{ width: '60%' }} /><i style={{ width: '30%' }} /><i style={{ width: '10%' }} /></div><b>%60 ev • %30 sipariş • %10 dışarı</b></button>
                 <button type="button" className={profile.stylePreset === 'Rahat' ? 'selected' : ''} onClick={() => selectPreset('Rahat')}><span className="preset-emoji">🛵</span><strong>Rahat</strong><small>Daha az mutfak mesaisi</small><div className="mini-split"><i style={{ width: '40%' }} /><i style={{ width: '40%' }} /><i style={{ width: '20%' }} /></div><b>%40 ev • %40 sipariş • %20 dışarı</b></button>
               </div>
               <div className="split-visual subsection"><div className="split-title"><strong>Seçilen dağılım</strong><span>{profile.stylePreset} mod</span></div><div className="split-bar"><span className="home" style={{ width: `${profile.mealSplit.home}%` }} /><span className="delivery" style={{ width: `${profile.mealSplit.delivery}%` }} /><span className="outside" style={{ width: `${profile.mealSplit.dineOut}%` }} /></div><div className="split-legend"><span><i className="home-dot" />🏠 Evde %{profile.mealSplit.home}</span><span><i className="delivery-dot" />🛵 Sipariş %{profile.mealSplit.delivery}</span><span><i className="outside-dot" />🍽️ Dışarı %{profile.mealSplit.dineOut}</span></div></div>
-              <div className="smart-note"><span>✨</span><div><strong>Lokma bunu gerektiğinde esnetecek.</strong><p>Bütçe yetmiyorsa daha çok ev yemeğine; vaktin yoksa uygun fiyatlı siparişlere kaydırabilecek.</p></div></div>
+              <div className="smart-note"><span>✨</span><div><strong>Bu dağılım esnek.</strong><p>Bütçe sıkışırsa ev yemeği ağırlığı artabilir; beğenmediğin tek bir öğünü menü onayında değiştirebilirsin.</p></div></div>
             </div>
           )}
 
           {step === 5 && (
-            <div className="step-panel location-step">
-              <span className="step-kicker">📍 Son dokunuş: konum</span><h2>Hangi çevreden alışveriş yapıyoruz?</h2><p className="step-description">Planın başında seçtiğin konumu burada son kez kontrol edebilir veya elle değiştirebilirsin.</p>
-              <div className="location-illustration" aria-hidden="true"><div className="map-grid" /><span className="map-pin">📍</span><span className="map-shop shop-a">🛒</span><span className="map-shop shop-b">🍜</span><span className="map-shop shop-c">🥬</span></div>
-              <div className="form-grid location-form">
-                <label className="input-field"><span>İl</span><input list="city-options" value={profile.city} onChange={(e) => patch('city', e.target.value)} placeholder="İstanbul" /><datalist id="city-options">{citySuggestions.map((city) => <option key={city} value={city} />)}</datalist></label>
-                <label className="input-field"><span>İlçe</span><input value={profile.district} onChange={(e) => patch('district', e.target.value)} placeholder="Kadıköy" /></label>
-                <label className="input-field"><span>Mahalle</span><input value={profile.neighborhood} onChange={(e) => patch('neighborhood', e.target.value)} placeholder="Caddebostan" /></label>
-              </div>
-              <div className="privacy-note">🔒 Kesin adres istemiyoruz. Mahalle seviyesi öneri üretmek için yeterli; canlı koordinat verdiysen Nearby taraması için onu da kullanacağız.</div>
-            </div>
-          )}
-
-          {step === 6 && (
             <div className="step-panel summary-step">
-              <span className="step-kicker">✨ Hazırsın</span><h2>{profile.name ? `${profile.name}, ` : ''}Lokma seni biraz tanıdı.</h2><p className="step-description">İlk haftalık planın bu temel üzerinden üretilecek. Her şeyi daha sonra değiştirebilirsin.</p>
+              <span className="step-kicker">✨ Hazırsın</span><h2>{profile.name ? `${profile.name}, ` : ''}menünü hazırlamaya hazırız.</h2><p className="step-description">Bir sonraki ekranda haftalık menünün tamamını göreceksin. Beğenmediğin öğünleri değiştirebilir, menüyü onayladıktan sonra plana başlayabilirsin.</p>
               <div className="summary-hero"><div><span>Günlük hedef</span><strong>{targets.calories.toLocaleString('tr-TR')} <small>kcal</small></strong><p>≈ {targets.protein} g protein</p></div><div><span>Plan bütçesi</span><strong>{profile.budget.toLocaleString('tr-TR')} <small>₺</small></strong><p>{profile.days} gün • {profile.people} kişi</p></div><div><span>Konum</span><strong className="location-summary">{profile.neighborhood || profile.district || profile.city || 'Belirtilmedi'}</strong><p>{[profile.district, profile.city].filter(Boolean).join(', ')}</p></div></div>
               <div className="summary-grid">
                 <article><span>🎯 Hedef</span><strong>{profile.goal}</strong><small>{profile.activity}</small></article>
                 <article><span>🥑 Beslenme</span><strong>{profile.diet}</strong><small>{profile.allergies.length ? `${profile.allergies.length} hassasiyet seçildi` : 'Alerjen seçilmedi'}</small></article>
                 <article><span>🍽️ Öğün düzeni</span><strong>Günde {profile.mealsPerDay} öğün</strong><small>{profile.breakfast ? 'Kahvaltı dahil' : 'Kahvaltısız plan'}</small></article>
                 <article><span>🏠 Yemek stili</span><strong>{profile.stylePreset}</strong><small>%{profile.mealSplit.home} ev • %{profile.mealSplit.delivery} sipariş</small></article>
-                <article><span>👨‍🍳 Mutfak</span><strong>{profile.cookingEquipment.length ? `${profile.cookingEquipment.length} ekipman` : 'Ekipman seçilmedi'}</strong><small>{profile.cookingEquipment.slice(0, 3).join(' • ') || 'Tarif yöntemleri sınırlı gösterilecek'}</small></article>
+                <article><span>👨‍🍳 Mutfak</span><strong>{profile.cookingEquipment.length ? `${profile.cookingEquipment.length} ekipman` : 'Ekipman seçilmedi'}</strong><small>{profile.cookingEquipment.slice(0, 4).join(' • ') || 'Tarif yöntemleri serbest'}</small></article>
               </div>
-              <div className="what-next"><span>🧠</span><div><strong>Şimdi ne olacak?</strong><p>Bir sonraki ekranda bütçe, hedef, konum ve mutfak tercihlerini kullanarak haftalık planı, alışveriş listesini ve gerçek çevre keşfini göstereceğiz.</p></div></div>
-              <button className="primary-onboarding finish-button" type="button" onClick={() => onComplete(profile)}>İlk planımı oluştur <span>✨</span></button>
+              <div className="what-next"><span>🍽️</span><div><strong>Sırada menü onayı var.</strong><p>Önce tüm yemek seçeneklerini göreceksin. Plan, sen “Bu menüyü onayla” demeden başlamayacak.</p></div></div>
+              <button className="primary-onboarding finish-button" type="button" onClick={() => onComplete(profile)}>Menümü göster <span>→</span></button>
             </div>
           )}
 
-          {step > 0 && step < 6 && <div className="step-navigation"><button type="button" className="back-button" onClick={goBack}>← Geri</button><button type="button" className="next-button" onClick={goNext}>Devam et <span>→</span></button></div>}
-          {step === 6 && <button type="button" className="summary-back" onClick={goBack}>← Bir şeyi değiştirmek istiyorum</button>}
+          {step > 0 && step < 5 && <div className="step-navigation"><button type="button" className="back-button" onClick={goBack}>← Geri</button><button type="button" className="next-button" onClick={goNext}>Devam et <span>→</span></button></div>}
+          {step === 5 && <button type="button" className="summary-back" onClick={goBack}>← Bir şeyi değiştirmek istiyorum</button>}
         </div>
       </section>
     </main>
