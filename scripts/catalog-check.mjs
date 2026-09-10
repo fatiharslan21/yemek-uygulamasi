@@ -9,6 +9,12 @@ function unique(values) {
   return new Set(values).size === values.length
 }
 
+function duplicates(values) {
+  const counts = new Map()
+  values.forEach((value) => counts.set(value, (counts.get(value) ?? 0) + 1))
+  return [...counts.entries()].filter(([, count]) => count > 1).map(([value]) => value)
+}
+
 function matches(text, pattern) {
   return [...text.matchAll(pattern)].map((match) => match[1])
 }
@@ -19,9 +25,11 @@ const outsideRecipeIds = matches(fs.readFileSync('src/data/expandedRecipes.ts', 
 const recipeIds = [...objectRecipeIds, ...outsideRecipeIds]
 const ingredientUses = sources.flatMap(({ text }) => matches(text, /ingredientId: '([^']+)'/g))
 const unknownIngredients = [...new Set(ingredientUses.filter((id) => !ingredientIds.includes(id)))]
+const duplicateIngredientIds = duplicates(ingredientIds)
+const duplicateRecipeIds = duplicates(recipeIds)
 
-if (!unique(ingredientIds)) failures.push('Malzeme ID listesinde tekrar var.')
-if (!unique(recipeIds)) failures.push('Tarif ID listesinde tekrar var.')
+if (!unique(ingredientIds)) failures.push(`Malzeme ID listesinde tekrar var: ${duplicateIngredientIds.join(', ')}`)
+if (!unique(recipeIds)) failures.push(`Tarif ID listesinde tekrar var: ${duplicateRecipeIds.join(', ')}`)
 if (unknownIngredients.length) failures.push(`Tanımsız malzeme referansı: ${unknownIngredients.join(', ')}`)
 if (recipeIds.length < 150) failures.push(`Tarif çeşitliliği beklenen seviyenin altında: ${recipeIds.length} < 150`)
 
