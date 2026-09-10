@@ -22,12 +22,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: TypeScript + Vite build
+      - name: Build + release QA
         id: build
         shell: bash
         run: |
           set +e
-          npm run build 2>&1 | tee build.log
+          npm run qa:release 2>&1 | tee build.log
           status=${PIPESTATUS[0]}
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
           exit 0
@@ -48,6 +48,6 @@ jobs:
           path: dist
           retention-days: 2
 
-      - name: Fail if build failed
+      - name: Fail if QA failed
         if: steps.build.outputs.exit_code != '0'
         run: exit 1
