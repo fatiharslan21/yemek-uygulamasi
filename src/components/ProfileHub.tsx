@@ -1,15 +1,16 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { RECIPE_CATALOG } from '../data/recipeCatalog'
-import { CloudAccountPanel } from './CloudAccountPanel'
 import { LocalBackupPanel } from './LocalBackupPanel'
 import { LegalCenter } from './LegalCenter'
 import { PlanHistoryPanel } from './PlanHistoryPanel'
 import { WeightTracker } from './WeightTracker'
 import { loadAppPreferences, saveAppPreferences, type AppPreferences } from '../services/appPreferences'
-import { cloudConfigured } from '../services/cloudClient'
+import { cloudConfigured } from '../services/cloudConfig'
 import { loadFavoriteRecipeIds, saveFavoriteRecipeIds } from '../services/favoritesStorage'
 import type { UserPlanProfile } from '../types'
 import '../profile-hub.css'
+
+const CloudAccountPanel = lazy(() => import('./CloudAccountPanel').then((module) => ({ default: module.CloudAccountPanel })))
 
 type ProfileHubProps = {
   profile: UserPlanProfile
@@ -66,7 +67,9 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
         <article><span>⚖️ Plan kilosu</span><strong>{profile.weight} kg</strong><small>hedef hesabında kullanılıyor</small></article>
       </section>
 
-      {cloudConfigured ? <CloudAccountPanel /> : <LocalBackupPanel />}
+      {cloudConfigured ? (
+        <Suspense fallback={<section className="profile-section shell"><p>Hesap bilgilerin hazırlanıyor…</p></section>}><CloudAccountPanel /></Suspense>
+      ) : <LocalBackupPanel />}
       <WeightTracker startingWeight={profile.weight} />
 
       <section className="profile-section shell">
