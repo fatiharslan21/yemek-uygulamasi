@@ -1,10 +1,7 @@
 name: Build Phone Preview
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'preview/**'
+  workflow_dispatch:
 
 permissions:
   contents: write
