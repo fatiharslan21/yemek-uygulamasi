@@ -7,6 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "qa:release": "npm run build && node scripts/release-check.mjs",
     "mobile:doctor": "cap doctor",
     "mobile:copy": "npm run build && cap copy",
     "mobile:sync": "npm run build && cap sync",
