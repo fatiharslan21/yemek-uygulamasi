@@ -1,0 +1,104 @@
+/* Final mobile safety layer: keep rich features usable without horizontal overflow. */
+html,body,#root,#lokma-app-content{max-width:100%;min-width:0;overflow-x:hidden}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%;height:auto}
+button,input,select,textarea{font:inherit;min-width:0}
+button,a,[role='button']{overflow-wrap:anywhere}
+h1,h2,h3,h4,p,strong,small,span,em,b,label{min-width:0;overflow-wrap:anywhere}
+.shell{min-width:0}
+[class*='grid']>*{min-width:0}
+
+@media(max-width:760px){
+  body{padding-bottom:max(78px,calc(66px + env(safe-area-inset-bottom)))}
+  .shell{width:min(100% - 24px,1180px)}
+  .dashboard-nav{width:100%;max-width:none;margin:0;padding-left:10px;padding-right:10px}
+  .dashboard-nav .brand-button{display:none}
+  .dashboard-nav .dashboard-tabs{width:100%;min-width:0}
+  .dashboard-tabs .dashboard-nav-button,.dashboard-tabs .profile-pill{min-width:0;white-space:normal;line-height:1.15;overflow:hidden}
+  .dashboard-tabs .nav-count{flex:0 0 auto}
+
+  .today-hero,.dashboard-hero,.section-title-row,.location-bridge-card{min-width:0}
+  .today-hero h1,.dashboard-hero h1{font-size:clamp(27px,8vw,38px);line-height:1.03}
+  .today-hero p,.dashboard-hero p{font-size:12px;line-height:1.5}
+  .today-progress-grid,.plan-metrics,.engine-metrics,.shopping-overview-grid,.price-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .today-progress-grid article,.plan-metrics article,.shopping-overview-grid article,.price-summary-grid article{padding:12px!important;border-radius:16px!important}
+  .today-progress-grid strong,.plan-metrics strong,.shopping-overview-grid strong,.price-summary-grid strong{font-size:clamp(18px,6vw,26px)!important;white-space:normal!important}
+
+  .today-meal-card,.engine-day-card,.shopping-group,.shopping-checklist-panel,.price-intelligence-panel,.daily-mini-card{min-width:0;overflow:hidden}
+  .today-meal-top,.engine-day-header{align-items:flex-start}
+  .today-meal-identity,.engine-meal-main,.shopping-item-main,.shopping-check-main{min-width:0}
+  .today-meal-identity h3,.engine-meal-main strong,.shopping-item-main strong,.shopping-check-main strong{overflow-wrap:anywhere;word-break:normal}
+  .today-meal-meta,.meal-nutrition,.engine-status-row,.reuse-stats{display:flex;flex-wrap:wrap;gap:6px}
+  .today-meal-actions,.meal-editor-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+  .today-meal-actions button,.meal-editor-actions button{width:100%;min-width:0;min-height:44px;padding:8px 6px;font-size:11px;white-space:normal}
+
+  .shopping-item{grid-template-columns:38px minmax(0,1fr)!important;gap:8px!important}
+  .shopping-package,.reuse-badge{grid-column:2;justify-self:start;text-align:left!important;max-width:100%}
+  .shopping-check-row{grid-template-columns:34px minmax(0,1fr)!important;gap:8px!important}
+  .shopping-check-row>.pantry-quantity-field,.shopping-check-row>.pantry-fill-button,.shopping-check-row>button:last-child{grid-column:2;width:100%;min-width:0}
+  .pantry-quantity-field>div{display:grid;grid-template-columns:minmax(0,1fr) auto;min-width:0}
+  .pantry-quantity-field input{width:100%;min-width:0}
+  .shopping-check-summary{display:flex;flex-wrap:wrap;gap:6px}
+  .shopping-check-summary span{flex:1 1 120px;min-width:0}
+  .market-quote-row{grid-template-columns:32px minmax(0,1fr)!important;gap:8px!important}
+  .market-quote-total{grid-column:2;text-align:left!important;justify-self:start!important}
+  .price-volatility-grid{grid-template-columns:1fr!important}
+
+  .recipe-detail-overlay{align-items:flex-end!important;padding:0!important}
+  .recipe-detail-drawer{width:100%!important;max-width:none!important;max-height:94dvh!important;border-radius:24px 24px 0 0!important;padding-bottom:env(safe-area-inset-bottom)}
+  .recipe-detail-header,.recipe-section-title,.cooking-guide-top{min-width:0}
+  .recipe-detail-heading{min-width:0}
+  .recipe-detail-heading h2{font-size:clamp(22px,7vw,30px);overflow-wrap:anywhere}
+  .recipe-quick-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .recipe-ingredient-row{grid-template-columns:36px minmax(0,1fr)!important}
+  .recipe-ingredient-row>b{grid-column:2;justify-self:start}
+  .cooking-method-tabs{display:flex!important;overflow-x:auto;gap:7px;padding-bottom:4px;scrollbar-width:none}
+  .cooking-method-tabs::-webkit-scrollbar{display:none}
+  .cooking-method-tab{flex:0 0 auto;max-width:180px;white-space:normal}
+  .recipe-detail-footer{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+  .recipe-detail-footer button{min-width:0;white-space:normal;min-height:48px}
+
+  .restaurant-candidate{grid-template-columns:28px minmax(0,1fr)!important;gap:8px!important;text-align:left}
+  .restaurant-candidate>b,.restaurant-candidate>em{grid-column:2;justify-self:start!important;text-align:left!important;max-width:100%}
+  .assigned-restaurant-card{grid-template-columns:28px minmax(0,1fr)!important}
+  .assigned-restaurant-card>button{grid-column:2;width:100%}
+  .business-real-meta{display:flex;flex-wrap:wrap;gap:5px}
+
+  .location-readable-line{grid-template-columns:1fr!important}
+  .location-bridge-action{width:100%;min-height:46px}
+  .nearby-place-card,.place-card{min-width:0}
+
+  .today-manual-chips,.rescue-mode-row,.restaurant-mini-list{max-width:100%;overscroll-behavior-inline:contain}
+  .rhythm-entry-list>div,.rescue-suggestion,.movement-options>button{min-width:0}
+  .today-bottom-actions{display:grid!important;grid-template-columns:1fr!important}
+  .today-bottom-actions button{width:100%;min-height:48px}
+}
+
+@media(max-width:430px){
+  .shell{width:min(100% - 18px,1180px)}
+  .today-progress-grid,.plan-metrics,.engine-metrics,.shopping-overview-grid,.price-summary-grid{gap:8px!important}
+  .today-progress-grid article span,.plan-metrics article span,.shopping-overview-grid article span,.price-summary-grid article span{font-size:10px!important}
+  .today-progress-grid article small,.plan-metrics article small,.shopping-overview-grid article small,.price-summary-grid article small{font-size:9px!important}
+  .today-meal-card,.engine-day-card,.shopping-checklist-panel,.price-intelligence-panel{border-radius:17px!important}
+  .today-meal-emoji,.engine-meal-emoji{flex:0 0 auto}
+  .engine-meal-row{grid-template-columns:42px minmax(0,1fr)!important}
+  .engine-meal-row>.meal-slot{grid-column:1/-1;width:max-content;max-width:100%}
+  .engine-meal-row>.meal-editor-side{grid-column:1/-1;width:100%}
+  .engine-meal-row>.engine-meal-emoji{grid-column:1}
+  .engine-meal-row>.engine-meal-main{grid-column:2}
+  .meal-tags{display:flex;flex-wrap:wrap;gap:5px}
+  .split-cost-strip{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .split-cost-strip .split-plus,.split-cost-strip .split-equals{display:none!important}
+  .split-cost-strip .split-total{grid-column:1/-1}
+  .split-cost-strip>small{grid-column:1/-1}
+}
+
+@media(max-width:360px){
+  .shell{width:min(100% - 14px,1180px)}
+  .today-progress-grid,.plan-metrics,.engine-metrics,.shopping-overview-grid,.price-summary-grid{grid-template-columns:1fr 1fr!important}
+  .dashboard-tabs .dashboard-nav-button,.dashboard-tabs .profile-pill{font-size:8px!important;padding-inline:2px!important}
+  .today-meal-actions,.meal-editor-actions{grid-template-columns:1fr 1fr}
+  .recipe-detail-footer{grid-template-columns:1fr}
+  .recipe-detail-header{gap:8px}
+  .recipe-detail-hero-icon{width:46px!important;height:46px!important;flex:0 0 46px!important}
+}
