@@ -2,6 +2,21 @@ import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { cloudClient } from './cloudClient'
 
+const RECOVERY_KEY = 'lokma.pending-password-recovery'
+
+export function hasPendingPasswordRecovery() {
+  return window.sessionStorage.getItem(RECOVERY_KEY) === '1'
+}
+
+export function clearPendingPasswordRecovery() {
+  window.sessionStorage.removeItem(RECOVERY_KEY)
+}
+
+function markPasswordRecoveryPending() {
+  window.sessionStorage.setItem(RECOVERY_KEY, '1')
+  window.dispatchEvent(new CustomEvent('lokma:password-recovery'))
+}
+
 function recoveryParams(url: URL) {
   const hash = new URLSearchParams(url.hash.replace(/^#/, ''))
   return {
@@ -22,7 +37,8 @@ async function handleAuthUrl(rawUrl: string) {
     return
   }
 
-  const isLokmaRecovery = url.protocol === 'lokma:' && url.hostname === 'auth' && url.pathname.replace(/\/$/, '') === '/reset'
+  const normalizedPath = url.pathname.replace(/\/$/, '')
+  const isLokmaRecovery = url.protocol === 'lokma:' && url.hostname === 'auth' && normalizedPath === '/reset'
   if (!isLokmaRecovery) return
 
   const params = recoveryParams(url)
@@ -41,11 +57,24 @@ async function handleAuthUrl(rawUrl: string) {
     return
   }
 
-  window.dispatchEvent(new CustomEvent('lokma:password-recovery'))
+  markPasswordRecoveryPending()
 }
 
 export async function initializeNativeAuthLinks() {
+  if (cloudClient) {
+    cloudClient.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') markPasswordRecoveryPending()
+    })
+  }
+
   if (!Capacitor.isNativePlatform()) return
+
+  const launchUrl = await App.getLaunchUrl()
+  if (launchUrl?.url) {
+    await handleAuthUrl(launchUrl.url).catch(() => {
+      window.dispatchEvent(new CustomEvent('lokma:password-recovery-error'))
+    })
+  }
 
   await App.addListener('appUrlOpen', ({ url }) => {
     void handleAuthUrl(url).catch(() => {
