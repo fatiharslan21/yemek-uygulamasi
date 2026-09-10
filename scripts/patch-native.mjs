@@ -40,6 +40,37 @@ function patchAndroid() {
   console.log('✓ Android konum izinleri ve lokma://auth deep-link ayarlandı')
 }
 
+function ensureIosPrivacyManifest() {
+  const privacyPath = path.join(root, 'ios/App/App/PrivacyInfo.xcprivacy')
+  if (fs.existsSync(privacyPath)) {
+    const existing = fs.readFileSync(privacyPath, 'utf8')
+    if (!existing.includes('NSPrivacyAccessedAPICategoryUserDefaults')) {
+      console.warn('! PrivacyInfo.xcprivacy mevcut ama UserDefaults nedeni yok. Xcode yayın turunda mevcut manifest ile birleştirilmeli.')
+    }
+    return
+  }
+
+  const privacyManifest = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
+`
+  fs.writeFileSync(privacyPath, privacyManifest)
+}
+
 function patchIos() {
   const plistPath = path.join(root, 'ios/App/App/Info.plist')
   if (!fs.existsSync(plistPath)) fail('Info.plist bulunamadı. Önce `npm run mobile:add:ios` çalıştır.')
@@ -70,7 +101,8 @@ function patchIos() {
 
   if (entries.length > 0) plist = plist.replace('</dict>\n</plist>', `${entries.join('')}\n</dict>\n</plist>`)
   fs.writeFileSync(plistPath, plist)
-  console.log('✓ iOS konum açıklaması ve lokma:// URL scheme ayarlandı')
+  ensureIosPrivacyManifest()
+  console.log('✓ iOS konum açıklaması, lokma:// URL scheme ve privacy manifest ayarlandı')
 }
 
 if (platform === 'android') patchAndroid()
