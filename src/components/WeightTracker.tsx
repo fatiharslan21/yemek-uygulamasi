@@ -45,24 +45,24 @@ export function WeightTracker({ startingWeight }: { startingWeight: number }) {
   }
 
   return (
-    <section className="profile-section shell weight-tracker-card">
-      <div className="profile-section-head"><div><span>⚖️</span><div><small>İlerleme</small><h2>Kilo takibi</h2><p>Tartıldığın günleri kaydet. Kayıtlar bu cihazda saklanır ve mevcut haftalık planı otomatik değiştirmez.</p></div></div>{stats && <b>{stats.last.weight.toFixed(1)} kg</b>}</div>
+    <section className="profile-section shell weight-tracker-card" aria-labelledby="weight-tracker-title">
+      <div className="profile-section-head"><div><span aria-hidden="true">⚖️</span><div><small>İlerleme</small><h2 id="weight-tracker-title">Kilo takibi</h2><p>Tartıldığın günleri kaydet. Mevcut haftanın menüsü ortasında değişmez; ayarın açıksa son tartımın bir sonraki haftanın menü önizlemesine yansır.</p></div></div>{stats && <b>{stats.last.weight.toFixed(1)} kg</b>}</div>
 
       <div className="weight-entry-form">
-        <label><span>Tarih</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
-        <label><span>Kilo</span><div><input inputMode="decimal" value={weight} onChange={(event) => setWeight(event.target.value)} /><b>kg</b></div></label>
-        <button type="button" onClick={save}>+ Kaydet</button>
+        <label><span>Tarih</span><input type="date" value={date} max={todayKey()} onChange={(event) => setDate(event.target.value)} /></label>
+        <label><span>Kilo</span><div><input inputMode="decimal" aria-label="Kilo kilogram" value={weight} onChange={(event) => setWeight(event.target.value)} /><b>kg</b></div></label>
+        <button type="button" onClick={save} disabled={!date || !Number.isFinite(parsedWeight) || parsedWeight < 30 || parsedWeight > 300}>+ Kaydet</button>
       </div>
 
       {stats ? (
         <>
           <div className="weight-stats-row"><span><small>İlk kayıt</small><strong>{stats.first.weight.toFixed(1)} kg</strong></span><span><small>Son kayıt</small><strong>{stats.last.weight.toFixed(1)} kg</strong></span><span className={stats.change <= 0 ? 'good' : ''}><small>Değişim</small><strong>{stats.change > 0 ? '+' : ''}{stats.change.toFixed(1)} kg</strong></span></div>
-          <div className="weight-chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Kilo trendi"><polyline points={points} fill="none" vectorEffect="non-scaling-stroke" /></svg></div>
-          <div className="weight-history-list">{[...entries].reverse().slice(0, 8).map((entry) => <div key={entry.id}><span>{formatDate(entry.date)}</span><strong>{entry.weight.toFixed(1)} kg</strong><button type="button" onClick={() => setEntries(removeWeightEntry(entry.id))} aria-label="Kilo kaydını sil">×</button></div>)}</div>
+          <div className="weight-chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={`Kilo trendi. İlk kayıt ${stats.first.weight.toFixed(1)} kilogram, son kayıt ${stats.last.weight.toFixed(1)} kilogram.`}><polyline points={points} fill="none" vectorEffect="non-scaling-stroke" /></svg></div>
+          <div className="weight-history-list">{[...entries].reverse().slice(0, 8).map((entry) => <div key={entry.id}><span>{formatDate(entry.date)}</span><strong>{entry.weight.toFixed(1)} kg</strong><button type="button" onClick={() => setEntries(removeWeightEntry(entry.id))} aria-label={`${formatDate(entry.date)} tarihli kilo kaydını sil`}>×</button></div>)}</div>
         </>
       ) : <div className="profile-empty">⚖️ İlk tartımını eklediğinde trend burada oluşacak.</div>}
 
-      <div className="weight-plan-note">💡 Plan hesabındaki kilo değerini değiştirmek istersen “Tercihleri düzenle” bölümünden güncelle. Böylece yeni menüyü görüp onayladıktan sonra hedefler yeniden hesaplanır.</div>
+      <div className="weight-plan-note">💡 “Yeni haftada son tartımı kullan” ayarı açıksa 7 günlük plan tamamlandığında son kaydın yeni menünün hedef hesabına alınır. Yeni menü yine sen görüp onayladıktan sonra başlar.</div>
     </section>
   )
 }
