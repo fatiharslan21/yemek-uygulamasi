@@ -11,6 +11,7 @@ import {
   updateCloudPassword,
 } from '../services/cloudClient'
 import {
+  deleteCloudSnapshot,
   exportLocalSnapshotFile,
   getCloudBackupInfo,
   getLocalSyncFreshness,
@@ -200,6 +201,15 @@ export function CloudAccountPanel() {
     window.location.reload()
   })
 
+  const removeCloudBackup = () => run(async () => {
+    const confirmed = window.confirm('Yalnızca buluttaki Lokma yedeği silinecek. Hesabın ve bu cihazdaki planların kalacak. Bulut yedeğini silmek istiyor musun?')
+    if (!confirmed) return
+    await deleteCloudSnapshot()
+    setBackupInfo({ exists: false, recordCount: 0 })
+    setFreshness(getLocalSyncFreshness())
+    setMessage('Bulut yedeğin silindi. Hesabın ve bu cihazdaki yerel verilerin korunuyor.')
+  })
+
   const importLocalBackup = async (file?: File) => {
     if (!file) return
     setBusy(true)
@@ -229,6 +239,7 @@ export function CloudAccountPanel() {
     await deleteCloudAccount()
     setUserEmail(null)
     setBackupInfo({ exists: false, recordCount: 0 })
+    setFreshness(getLocalSyncFreshness())
     setMessage('Bulut hesabın silindi. Bu cihazdaki yerel Lokma verileri korunuyor.')
   })
 
@@ -270,6 +281,7 @@ export function CloudAccountPanel() {
             <button type="button" disabled={busy || !online || !backupInfo.exists} onClick={restore}>↙ Buluttaki yedeği getir</button>
             <button type="button" disabled={busy || !online} className="quiet" onClick={logout}>Çıkış yap</button>
           </div>
+          {backupInfo.exists && <button type="button" className="cloud-delete-backup" disabled={busy || !online} onClick={removeCloudBackup}>Yalnızca bulut yedeğimi sil</button>}
           <p className="cloud-sync-rule">↔️ Otomatik çakışma çözümü yok: hangi cihazın verisinin kullanılacağını sen seçersin. Böylece eski bir telefon yeni planını sessizce ezmez.</p>
           <button type="button" className="cloud-delete-account" disabled={busy || !online} onClick={deleteAccount}>Hesabımı kalıcı olarak sil</button>
         </div>
