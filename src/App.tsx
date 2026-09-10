@@ -54,6 +54,8 @@ function App() {
     const applyPreferences = () => {
       const preferences = loadAppPreferences()
       document.body.classList.toggle('lokma-reduced-motion', preferences.reducedMotion)
+      document.body.classList.toggle('lokma-larger-text', preferences.largerText)
+      document.body.classList.toggle('lokma-high-contrast', preferences.highContrast)
     }
     const requestRenewalApproval = (event: Event) => {
       event.preventDefault()
@@ -115,7 +117,7 @@ function App() {
 
   const resetLocalApp = () => {
     clearAllLokmaLocalData()
-    document.body.classList.remove('lokma-reduced-motion')
+    document.body.classList.remove('lokma-reduced-motion', 'lokma-larger-text', 'lokma-high-contrast')
     setProfile(initialProfile)
     setHasCompletedOnboarding(false)
     setScreen('location')
