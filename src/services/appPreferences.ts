@@ -3,11 +3,15 @@ const STORAGE_KEY = 'lokma.app-preferences.v1'
 export type AppPreferences = {
   favoriteBiasEnabled: boolean
   reducedMotion: boolean
+  largerText: boolean
+  highContrast: boolean
 }
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   favoriteBiasEnabled: true,
   reducedMotion: false,
+  largerText: false,
+  highContrast: false,
 }
 
 export function loadAppPreferences(): AppPreferences {
@@ -18,6 +22,8 @@ export function loadAppPreferences(): AppPreferences {
     return {
       favoriteBiasEnabled: typeof parsed.favoriteBiasEnabled === 'boolean' ? parsed.favoriteBiasEnabled : true,
       reducedMotion: typeof parsed.reducedMotion === 'boolean' ? parsed.reducedMotion : false,
+      largerText: typeof parsed.largerText === 'boolean' ? parsed.largerText : false,
+      highContrast: typeof parsed.highContrast === 'boolean' ? parsed.highContrast : false,
     }
   } catch {
     return DEFAULT_APP_PREFERENCES
@@ -25,8 +31,11 @@ export function loadAppPreferences(): AppPreferences {
 }
 
 export function saveAppPreferences(preferences: AppPreferences) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences))
-  window.dispatchEvent(new CustomEvent('lokma:preferences-changed', { detail: preferences }))
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences))
+  } finally {
+    window.dispatchEvent(new CustomEvent('lokma:preferences-changed', { detail: preferences }))
+  }
 }
 
 export function clearAppPreferences() {
