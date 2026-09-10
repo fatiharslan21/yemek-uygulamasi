@@ -9,6 +9,7 @@ import { initializeAdPolicy } from './services/adPolicy'
 import { loadAppPreferences } from './services/appPreferences'
 import { loadSavedAppState, saveAppState } from './services/appStorage'
 import { clearAllLokmaLocalData } from './services/localData'
+import { hasPendingPasswordRecovery } from './services/nativeAuthLinks'
 import { localDateKey } from './services/planCalendar'
 import { savePlanSession } from './services/planSessionStorage'
 import { loadWeightHistory } from './services/weightTrackingStorage'
@@ -49,7 +50,7 @@ function App() {
   const savedState = loadSavedAppState()
   const [profile, setProfile] = useState<UserPlanProfile>(() => savedState?.profile ?? initialProfile)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => Boolean(savedState?.onboardingCompleted))
-  const [screen, setScreen] = useState<Screen>(() => savedState?.onboardingCompleted ? 'dashboard' : 'location')
+  const [screen, setScreen] = useState<Screen>(() => hasPendingPasswordRecovery() ? 'profile' : savedState?.onboardingCompleted ? 'dashboard' : 'location')
 
   useEffect(() => {
     const applyPreferences = () => {
@@ -71,14 +72,21 @@ function App() {
       setScreen('approval')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+    const openPasswordRecovery = () => {
+      setScreen('profile')
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }
 
     initializeAdPolicy()
     applyPreferences()
+    if (hasPendingPasswordRecovery()) openPasswordRecovery()
     window.addEventListener('lokma:preferences-changed', applyPreferences)
     window.addEventListener('lokma:renew-plan', requestRenewalApproval)
+    window.addEventListener('lokma:password-recovery', openPasswordRecovery)
     return () => {
       window.removeEventListener('lokma:preferences-changed', applyPreferences)
       window.removeEventListener('lokma:renew-plan', requestRenewalApproval)
+      window.removeEventListener('lokma:password-recovery', openPasswordRecovery)
     }
   }, [])
 
@@ -146,7 +154,7 @@ function App() {
   }
 
   if (screen === 'profile') {
-    return <ProfileHub profile={profile} onBack={() => setScreen('dashboard')} onEditPreferences={editPreferences} onAbout={() => setScreen('about')} onResetAll={resetLocalApp} />
+    return <ProfileHub profile={profile} onBack={() => setScreen(hasCompletedOnboarding ? 'dashboard' : 'location')} onEditPreferences={editPreferences} onAbout={() => setScreen('about')} onResetAll={resetLocalApp} />
   }
 
   if (screen === 'dashboard') {
