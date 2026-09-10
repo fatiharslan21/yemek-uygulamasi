@@ -94,6 +94,10 @@ function loadSyncMeta(): SyncMeta | null {
   }
 }
 
+export function clearLocalSyncBaseline() {
+  window.localStorage.removeItem(SYNC_META_KEY)
+}
+
 export function markSnapshotSynced(snapshot: CloudSnapshot, syncedAt = new Date().toISOString()) {
   validateSnapshot(snapshot)
   const meta: SyncMeta = { lastSyncedDigest: snapshotDigest(snapshot), lastSyncedAt: syncedAt }
@@ -211,6 +215,20 @@ export async function pullCloudSnapshot(): Promise<CloudSnapshot> {
   const snapshot = data.payload as CloudSnapshot
   validateSnapshot(snapshot)
   return snapshot
+}
+
+export async function deleteCloudSnapshot() {
+  if (!cloudClient) throw new Error('Bulut bağlantısı henüz yapılandırılmadı.')
+  const user = await getCloudUser()
+  if (!user) throw new Error('Önce hesabına giriş yapmalısın.')
+
+  const { error } = await cloudClient
+    .from('user_state')
+    .delete()
+    .eq('user_id', user.id)
+
+  if (error) throw error
+  clearLocalSyncBaseline()
 }
 
 export async function getCloudBackupInfo(): Promise<CloudBackupInfo> {
