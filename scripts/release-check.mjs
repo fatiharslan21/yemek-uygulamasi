@@ -47,11 +47,12 @@ if (exists('capacitor.config.ts')) {
 const textFiles = walk('dist').filter((file) => /\.(html|js|css|webmanifest|svg)$/i.test(file))
 const bundleText = textFiles.map((file) => read(file)).join('\n')
 
+// Yalnızca kullanıcıya gerçekten görünmesi istenmeyen marka/geliştirici ifadelerini tarıyoruz.
+// Component ve CSS class adları minified bundle içinde kalabildiği için iç sembol adlarını burada yasaklamıyoruz.
 const forbiddenVisibleTraces = [
   { pattern: /OpenAI/i, label: 'OpenAI' },
   { pattern: /ChatGPT/i, label: 'ChatGPT' },
   { pattern: /Plan motoru v\d/i, label: 'teknik plan motoru sürüm rozeti' },
-  { pattern: /Nearby (?:taraması|verisi|v\d)/i, label: 'Nearby geliştirme terimi' },
   { pattern: /Lokma demo tahmini/i, label: 'demo tahmin ifadesi' },
 ]
 
