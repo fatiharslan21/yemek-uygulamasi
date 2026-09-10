@@ -6,8 +6,17 @@ export type CloudSnapshot = {
   records: Record<string, string>
 }
 
+export type CloudBackupInfo = {
+  exists: boolean
+  updatedAt?: string
+  exportedAt?: string
+  recordCount: number
+}
+
 const LOCAL_PREFIX = 'lokma.'
 const SENSITIVE_KEYS = new Set(['latitude', 'longitude', 'locationAccuracy'])
+const MAX_RECORDS = 2000
+const MAX_RECORD_BYTES = 1_500_000
 
 function sanitizeValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sanitizeValue)
@@ -28,6 +37,24 @@ function sanitizeStoredValue(raw: string) {
   }
 }
 
+function validateSnapshot(snapshot: CloudSnapshot) {
+  if (!snapshot || snapshot.version !== 1 || !snapshot.records || typeof snapshot.records !== 'object') {
+    throw new Error('Bulut yedeği bu uygulama sürümüyle uyumlu değil.')
+  }
+
+  const entries = Object.entries(snapshot.records)
+  if (entries.length > MAX_RECORDS) throw new Error('Bulut yedeği beklenenden fazla kayıt içeriyor.')
+
+  entries.forEach(([key, value]) => {
+    if (!key.startsWith(LOCAL_PREFIX) || typeof value !== 'string') {
+      throw new Error('Bulut yedeğinde geçersiz bir kayıt bulundu.')
+    }
+    if (new Blob([value]).size > MAX_RECORD_BYTES) {
+      throw new Error('Bulut yedeğindeki bir kayıt güvenli boyut sınırını aşıyor.')
+    }
+  })
+}
+
 export function buildLocalCloudSnapshot(): CloudSnapshot {
   const records: Record<string, string> = {}
   for (let index = 0; index < window.localStorage.length; index += 1) {
@@ -46,15 +73,26 @@ export function buildLocalCloudSnapshot(): CloudSnapshot {
 }
 
 export function restoreLocalCloudSnapshot(snapshot: CloudSnapshot) {
-  if (snapshot.version !== 1 || !snapshot.records) throw new Error('Bulut yedeği bu uygulama sürümüyle uyumlu değil.')
+  validateSnapshot(snapshot)
 
+  const backup = new Map<string, string>()
   Object.keys(window.localStorage)
     .filter((key) => key.startsWith(LOCAL_PREFIX))
-    .forEach((key) => window.localStorage.removeItem(key))
+    .forEach((key) => {
+      const value = window.localStorage.getItem(key)
+      if (value != null) backup.set(key, value)
+    })
 
-  Object.entries(snapshot.records).forEach(([key, value]) => {
-    if (key.startsWith(LOCAL_PREFIX)) window.localStorage.setItem(key, value)
-  })
+  try {
+    backup.forEach((_value, key) => window.localStorage.removeItem(key))
+    Object.entries(snapshot.records).forEach(([key, value]) => window.localStorage.setItem(key, value))
+  } catch (error) {
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith(LOCAL_PREFIX))
+      .forEach((key) => window.localStorage.removeItem(key))
+    backup.forEach((value, key) => window.localStorage.setItem(key, value))
+    throw error
+  }
 }
 
 export function exportLocalSnapshotFile() {
@@ -67,7 +105,7 @@ export function exportLocalSnapshotFile() {
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  window.setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 export async function pushCloudSnapshot() {
@@ -76,12 +114,13 @@ export async function pushCloudSnapshot() {
   if (!user) throw new Error('Önce hesabına giriş yapmalısın.')
 
   const payload = buildLocalCloudSnapshot()
+  const updatedAt = new Date().toISOString()
   const { error } = await cloudClient
     .from('user_state')
-    .upsert({ user_id: user.id, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    .upsert({ user_id: user.id, payload, updated_at: updatedAt }, { onConflict: 'user_id' })
 
   if (error) throw error
-  return payload
+  return { payload, updatedAt }
 }
 
 export async function pullCloudSnapshot(): Promise<CloudSnapshot> {
@@ -98,5 +137,31 @@ export async function pullCloudSnapshot(): Promise<CloudSnapshot> {
   if (error) throw error
   if (!data?.payload) throw new Error('Bu hesapta henüz bir Lokma yedeği yok.')
 
-  return data.payload as CloudSnapshot
+  const snapshot = data.payload as CloudSnapshot
+  validateSnapshot(snapshot)
+  return snapshot
+}
+
+export async function getCloudBackupInfo(): Promise<CloudBackupInfo> {
+  if (!cloudClient) return { exists: false, recordCount: 0 }
+  const user = await getCloudUser()
+  if (!user) return { exists: false, recordCount: 0 }
+
+  const { data, error } = await cloudClient
+    .from('user_state')
+    .select('payload, updated_at')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data?.payload) return { exists: false, recordCount: 0 }
+
+  const snapshot = data.payload as CloudSnapshot
+  validateSnapshot(snapshot)
+  return {
+    exists: true,
+    updatedAt: typeof data.updated_at === 'string' ? data.updated_at : undefined,
+    exportedAt: snapshot.exportedAt,
+    recordCount: Object.keys(snapshot.records).length,
+  }
 }
