@@ -1,6 +1,7 @@
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { recipePassesCatalogSafety } from '../services/catalogSafety'
 import { recipeSupportsEquipment } from '../services/cookingCompatibility'
+import { getRecipePreferenceScore } from '../services/mealPreferenceSignals'
 import { generateWeeklyPlan as generateBaseWeeklyPlan } from './basePlanEngine'
 import { rebuildEditedPlan, swapMealInEditedPlan } from './planEditor'
 import type { PlannedMeal, Recipe, UserPlanProfile, WeeklyPlan } from '../types'
@@ -40,7 +41,8 @@ function compatibleFavoriteScore(recipe: Recipe, meal: PlannedMeal, profile: Use
   const nextPrice = recipe.estimatedPrice * profile.people
   const priceGap = Math.abs(nextPrice - meal.estimatedPrice) / Math.max(1, meal.estimatedPrice)
   const sourcePenalty = recipe.source === meal.source ? 0 : 0.35
-  return (calorieGap * 0.55) + (proteinGap * 0.65) + (priceGap * 0.5) + sourcePenalty
+  const learnedBonus = Math.max(-1.5, Math.min(1.5, getRecipePreferenceScore(recipe)))
+  return (calorieGap * 0.55) + (proteinGap * 0.65) + (priceGap * 0.5) + sourcePenalty - learnedBonus * 0.16
 }
 
 function mealFromRecipe(recipe: Recipe, meal: PlannedMeal, profile: UserPlanProfile, suffix: string): PlannedMeal {
@@ -55,7 +57,7 @@ function mealFromRecipe(recipe: Recipe, meal: PlannedMeal, profile: UserPlanProf
     calories: recipe.calories,
     protein: recipe.protein,
     estimatedPrice: recipe.estimatedPrice * profile.people,
-    tags: [...recipe.tags, 'favori dokunuşu'],
+    tags: [...recipe.tags, 'kişisel tercih'],
   }
 }
 
@@ -109,12 +111,52 @@ export function applyFavoriteBias(
   return currentPlan
 }
 
+function applyLearnedAvoidance(plan: WeeklyPlan, profile: UserPlanProfile, seed: number) {
+  let currentPlan = plan
+  let replacements = 0
+  const replacementLimit = Math.max(1, Math.ceil(profile.days / 2))
+  const positions = currentPlan.days.flatMap((day, dayIndex) => day.meals.map((meal, mealIndex) => ({ dayIndex, mealIndex, meal })))
+
+  for (const position of positions) {
+    if (replacements >= replacementLimit) break
+    const currentRecipe = RECIPE_CATALOG.find((recipe) => recipe.id === position.meal.recipeId)
+    if (!currentRecipe) continue
+    const currentPreference = getRecipePreferenceScore(currentRecipe)
+    if (currentPreference > -0.9) continue
+
+    const candidates = RECIPE_CATALOG
+      .filter((recipe) => recipe.id !== currentRecipe.id)
+      .filter((recipe) => recipe.mealSlots.includes(position.meal.slot))
+      .filter((recipe) => recipeMatchesProfile(recipe, profile))
+      .filter((recipe) => getRecipePreferenceScore(recipe) > currentPreference + 0.6)
+      .sort((left, right) => compatibleFavoriteScore(left, position.meal, profile) - compatibleFavoriteScore(right, position.meal, profile))
+
+    const pool = candidates.slice(0, 5)
+    if (!pool.length) continue
+    const recipe = pool[Math.abs(seed + position.dayIndex * 7 + position.mealIndex) % pool.length]
+    const days = currentPlan.days.map((day) => ({ ...day, meals: day.meals.map((meal) => ({ ...meal })) }))
+    days[position.dayIndex].meals[position.mealIndex] = mealFromRecipe(recipe, position.meal, profile, `learn-${seed}`)
+    const candidatePlan = rebuildEditedPlan(profile, days, {
+      adjustedForBudget: currentPlan.adjustedForBudget,
+      convertedOutsideMeals: currentPlan.convertedOutsideMeals,
+    })
+
+    if (candidatePlan.totalCost <= Math.max(profile.budget, currentPlan.totalCost) * 1.04) {
+      currentPlan = candidatePlan
+      replacements += 1
+    }
+  }
+
+  return currentPlan
+}
+
 export function generatePersonalizedPlan(
   profile: UserPlanProfile,
   seed = 1,
   favoriteRecipeIds: Set<string> = new Set(),
 ) {
-  return applyFavoriteBias(generateBaseWeeklyPlan(profile, seed), profile, favoriteRecipeIds, seed)
+  const withFavorites = applyFavoriteBias(generateBaseWeeklyPlan(profile, seed), profile, favoriteRecipeIds, seed)
+  return applyLearnedAvoidance(withFavorites, profile, seed)
 }
 
 export function swapMealWithPreference(
