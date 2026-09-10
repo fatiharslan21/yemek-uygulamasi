@@ -3,6 +3,7 @@ import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { useNearbyData } from '../context/NearbyDataContext'
 import { getCookingGuides, guideIsAvailable } from '../services/cookingGuides'
 import { rankRestaurantsForMeal } from '../services/businessMatcher'
+import { CookingFocusMode } from './CookingFocusMode'
 import type { NearbyPlace } from '../services/nearbyPlaces'
 import type { PlannedMeal, Recipe, UserPlanProfile, WeeklyPlan } from '../types'
 import '../recipe-detail.css'
@@ -93,6 +94,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
   const restaurantCandidates = useMemo(() => rankRestaurantsForMeal(places, meal).slice(0, 6), [places, meal])
   const assignedRestaurant = restaurantAssignments[meal.id]
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null)
+  const [focusOpen, setFocusOpen] = useState(false)
   const drawerRef = useRef<HTMLElement | null>(null)
   const selectedGuide = cookingGuides.find((item) => item.id === selectedGuideId)
     ?? cookingGuides.find((item) => guideIsAvailable(item, profile.cookingEquipment))
@@ -102,11 +104,11 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
   useEffect(() => {
     drawerRef.current?.focus()
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape' && !focusOpen) onClose()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [onClose, focusOpen])
 
   return (
     <div className="recipe-detail-overlay" role="presentation" onMouseDown={onClose}>
@@ -179,6 +181,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
                 {!selectedGuideAvailable && selectedGuide.equipment.length > 0 && <div className="cooking-method-note">Bu yöntem için gerekli ekipmanların tamamı mutfak profilinde seçili değil. Tercihlerini düzenleyerek ekleyebilirsin.</div>}
                 <ol className="recipe-step-list">{selectedGuide.steps.map((step) => <li key={step}>{step}</li>)}</ol>
                 {selectedGuide.note && <div className="cooking-method-note">⚠️ {selectedGuide.note}</div>}
+                <button type="button" className="cooking-focus-launch" disabled={!selectedGuideAvailable} onClick={() => setFocusOpen(true)}>👨‍🍳 Adım adım pişirme modunu aç</button>
               </div>
             )}
           </section>
@@ -224,6 +227,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
           <button type="button" className={`drawer-lock-button ${locked ? 'active' : ''}`} onClick={onToggleLock}>{locked ? '🔒 Kilitli — aç' : '🔓 Bu öğünü sabitle'}</button>
         </footer>
       </aside>
+      {focusOpen && selectedGuide && <CookingFocusMode title={meal.title} emoji={meal.emoji} guide={selectedGuide} onClose={() => setFocusOpen(false)} />}
     </div>
   )
 }
