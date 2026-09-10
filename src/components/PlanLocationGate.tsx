@@ -64,12 +64,7 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
           locationAccuracy: coords.accuracy,
           locationSource: 'device',
         }))
-        setLocationStatus({
-          status: 'success',
-          coords,
-          resolved,
-          message: 'Konum bulundu ve plan alanlarına aktarıldı.',
-        })
+        setLocationStatus({ status: 'success', coords, resolved, message: 'Konum bulundu ve alanlara aktarıldı.' })
       } catch {
         setDraft((current) => ({
           ...current,
@@ -85,16 +80,14 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
         })
       }
     } catch (error) {
-      const message = error instanceof BrowserLocationError
-        ? error.message
-        : 'Konum alınırken beklenmeyen bir sorun oluştu.'
+      const message = error instanceof BrowserLocationError ? error.message : 'Konum alınırken beklenmeyen bir sorun oluştu.'
       setLocationStatus({ status: 'error', message })
     }
   }
 
   const continueFlow = () => {
     if (!draft.city.trim()) {
-      setLocationStatus({ status: 'error', message: 'Planı oluşturmak için en azından il bilgisini girelim.' })
+      setLocationStatus({ status: 'error', message: 'Devam etmek için en azından il bilgisini girelim.' })
       return
     }
     onContinue(draft)
@@ -108,9 +101,7 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
       <div className="location-bg-orb location-bg-b" />
 
       <header className="plan-location-nav shell">
-        <button className="brand brand-button" type="button" onClick={onBack}>
-          <span className="brand-mark">🍋</span><span>lokma</span>
-        </button>
+        <button className="brand brand-button" type="button" onClick={onBack}><span className="brand-mark">🍋</span><span>lokma</span></button>
         <span>İlk kurulum • Konum</span>
         <button type="button" className="ghost-action" onClick={onBack}>← Geri</button>
       </header>
@@ -118,42 +109,24 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
       <section className="plan-location-shell shell">
         <div className="plan-location-card">
           <div className="plan-location-copy">
-            <span className="step-kicker">📍 İlk adım</span>
+            <span className="step-kicker">📍 İlk ve tek konum adımı</span>
             <h1>Planını <em>çevrene göre</em> kuralım.</h1>
-            <p>Lokma yakındaki gerçek market ve restoranları bu bölge üzerinden tarayacak. Canlı konumdan otomatik doldurabilir veya il, ilçe ve mahalleyi elle yazabilirsin.</p>
+            <p>Konum bilgisini yakındaki restoran seçeneklerini göstermek için kullanıyoruz. Market fiyat rehberi konumdan bağımsızdır. Canlı konumdan otomatik doldurabilir veya il, ilçe ve mahalleyi elle yazabilirsin.</p>
           </div>
 
           <div className="location-mode-grid">
-            <button
-              type="button"
-              className={`live-location-choice ${locationStatus.status === 'success' ? 'active' : ''}`}
-              disabled={locationStatus.status === 'loading'}
-              onClick={useLiveLocation}
-            >
+            <button type="button" className={`live-location-choice ${locationStatus.status === 'success' ? 'active' : ''}`} disabled={locationStatus.status === 'loading'} onClick={useLiveLocation}>
               <span className="location-choice-icon">⌖</span>
-              <div>
-                <strong>{locationStatus.status === 'loading' ? 'Konum alınıyor…' : 'Canlı konumdan doldur'}</strong>
-                <small>İzin verirsen il, ilçe ve mahalleyi otomatik bulmaya çalışırız.</small>
-              </div>
+              <div><strong>{locationStatus.status === 'loading' ? 'Konum alınıyor…' : 'Canlı konumdan doldur'}</strong><small>İzin verirsen il, ilçe ve mahalleyi otomatik bulmaya çalışırız.</small></div>
               <b>{locationStatus.status === 'success' ? '✓' : '→'}</b>
             </button>
 
             <div className="manual-location-label"><span>veya elle seç</span></div>
 
             <div className="plan-location-form">
-              <label className="input-field">
-                <span>İl</span>
-                <input list="plan-city-options" value={draft.city} onChange={(e) => patchManualLocation('city', e.target.value)} placeholder="İstanbul" />
-                <datalist id="plan-city-options">{citySuggestions.map((city) => <option key={city} value={city} />)}</datalist>
-              </label>
-              <label className="input-field">
-                <span>İlçe</span>
-                <input value={draft.district} onChange={(e) => patchManualLocation('district', e.target.value)} placeholder="Kadıköy" />
-              </label>
-              <label className="input-field">
-                <span>Mahalle</span>
-                <input value={draft.neighborhood} onChange={(e) => patchManualLocation('neighborhood', e.target.value)} placeholder="Caddebostan" />
-              </label>
+              <label className="input-field"><span>İl</span><input list="plan-city-options" value={draft.city} onChange={(e) => patchManualLocation('city', e.target.value)} placeholder="İstanbul" /><datalist id="plan-city-options">{citySuggestions.map((city) => <option key={city} value={city} />)}</datalist></label>
+              <label className="input-field"><span>İlçe</span><input value={draft.district} onChange={(e) => patchManualLocation('district', e.target.value)} placeholder="Kadıköy" /></label>
+              <label className="input-field"><span>Mahalle</span><input value={draft.neighborhood} onChange={(e) => patchManualLocation('neighborhood', e.target.value)} placeholder="Caddebostan" /></label>
             </div>
           </div>
 
@@ -163,26 +136,14 @@ export function PlanLocationGate({ profile, onContinue, onBack }: PlanLocationGa
               <div>
                 <strong>{locationStatus.status === 'success' ? (locationTitle || 'Konum hazır') : locationStatus.status === 'loading' ? 'Konum aranıyor' : 'Konumu kontrol edelim'}</strong>
                 <p>{locationStatus.message}</p>
-                {locationStatus.status === 'success' && (
-                  <div className="resolved-location-grid">
-                    <span><small>İl</small><b>{draft.city || '—'}</b></span>
-                    <span><small>İlçe</small><b>{draft.district || '—'}</b></span>
-                    <span><small>Mahalle</small><b>{draft.neighborhood || '—'}</b></span>
-                  </div>
-                )}
-                {locationStatus.coords && (
-                  <code>{locationStatus.coords.latitude.toFixed(5)}, {locationStatus.coords.longitude.toFixed(5)} • ±{Math.round(locationStatus.coords.accuracy)} m</code>
-                )}
+                {locationStatus.status === 'success' && <div className="resolved-location-grid"><span><small>İl</small><b>{draft.city || '—'}</b></span><span><small>İlçe</small><b>{draft.district || '—'}</b></span><span><small>Mahalle</small><b>{draft.neighborhood || '—'}</b></span></div>}
               </div>
             </div>
           )}
 
           <div className="location-plan-preview">
-            <span>🧠</span>
-            <div>
-              <strong>Konum sadece harita için değil.</strong>
-              <p>Plan tamamlandığında Nearby bu bölgedeki gerçek işletmeleri tarar; restoran adayları dışarı öğünlerine, market adayları alışveriş sepetine bağlanır.</p>
-            </div>
+            <span>🍽️</span>
+            <div><strong>Konum yalnızca restoran keşfi için devreye girer.</strong><p>Planın içindeki sipariş veya dışarı öğünlerinde istersen çevrendeki gerçek restoranları ayrıca arayabilirsin. Bu adımı onboarding sonunda tekrar sormayacağız.</p></div>
           </div>
 
           <div className="plan-location-actions">
