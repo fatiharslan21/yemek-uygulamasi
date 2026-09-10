@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   cloudConfigured,
   deleteCloudAccount,
@@ -13,10 +13,14 @@ import {
 import {
   exportLocalSnapshotFile,
   getCloudBackupInfo,
+  getLocalSyncFreshness,
+  markSnapshotSynced,
+  parseLocalSnapshotFile,
   pullCloudSnapshot,
   pushCloudSnapshot,
   restoreLocalCloudSnapshot,
   type CloudBackupInfo,
+  type LocalSyncFreshness,
 } from '../services/cloudSync'
 import { clearPendingPasswordRecovery, hasPendingPasswordRecovery } from '../services/nativeAuthLinks'
 import '../cloud-account.css'
@@ -45,11 +49,14 @@ export function CloudAccountPanel() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [recoveryMode, setRecoveryMode] = useState(() => hasPendingPasswordRecovery())
   const [backupInfo, setBackupInfo] = useState<CloudBackupInfo>({ exists: false, recordCount: 0 })
+  const [freshness, setFreshness] = useState<LocalSyncFreshness>(() => getLocalSyncFreshness())
   const [busy, setBusy] = useState(false)
   const [online, setOnline] = useState(() => navigator.onLine)
   const [message, setMessage] = useState<string | null>(() => hasPendingPasswordRecovery() ? 'Şifre yenileme bağlantın doğrulandı. Şimdi yeni şifreni belirleyebilirsin.' : null)
+  const backupInputRef = useRef<HTMLInputElement | null>(null)
 
   const refreshBackupInfo = async () => {
+    setFreshness(getLocalSyncFreshness())
     if (!cloudConfigured || !navigator.onLine) return
     try {
       setBackupInfo(await getCloudBackupInfo())
@@ -112,6 +119,7 @@ export function CloudAccountPanel() {
   }, [])
 
   useEffect(() => {
+    setFreshness(getLocalSyncFreshness())
     if (online && userEmail) void refreshBackupInfo()
   }, [online, userEmail])
 
@@ -178,6 +186,7 @@ export function CloudAccountPanel() {
       exportedAt: result.payload.exportedAt,
       recordCount: Object.keys(result.payload.records).length,
     })
+    setFreshness(getLocalSyncFreshness())
     setMessage('Bu cihazdaki Lokma verileri buluta yedeklendi. Kesin GPS koordinatı yedeğe dahil edilmedi. ✓')
   })
 
@@ -187,8 +196,27 @@ export function CloudAccountPanel() {
     if (!confirmed) return
     const snapshot = await pullCloudSnapshot()
     restoreLocalCloudSnapshot(snapshot)
+    markSnapshotSynced(snapshot, backupInfo.updatedAt ?? snapshot.exportedAt)
     window.location.reload()
   })
+
+  const importLocalBackup = async (file?: File) => {
+    if (!file) return
+    setBusy(true)
+    setMessage(null)
+    try {
+      const snapshot = await parseLocalSnapshotFile(file)
+      const confirmed = window.confirm(`${snapshot.exportedAt.slice(0, 10)} tarihli yerel yedek bu cihazdaki mevcut Lokma verilerinin yerine geçecek. Devam edilsin mi?`)
+      if (!confirmed) return
+      restoreLocalCloudSnapshot(snapshot)
+      window.location.reload()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Yerel yedek geri yüklenemedi.')
+    } finally {
+      setBusy(false)
+      if (backupInputRef.current) backupInputRef.current.value = ''
+    }
+  }
 
   const logout = () => run(async () => {
     await signOutCloud()
@@ -232,10 +260,11 @@ export function CloudAccountPanel() {
       ) : userEmail ? (
         <div className="cloud-signed-in">
           <div className="cloud-user-line"><span>✓</span><div><small>Bağlı hesap</small><strong>{userEmail}</strong></div></div>
-          <div className="cloud-backup-status">
+          <div className={`cloud-backup-status ${freshness.changedSinceLastSync ? 'has-changes' : ''}`}>
             <div><small>Bulut yedeği</small><strong>{backupInfo.exists ? formatBackupDate(backupInfo.updatedAt) : 'Henüz oluşturulmadı'}</strong></div>
             <span>{backupInfo.exists ? `${backupInfo.recordCount} yerel kayıt` : 'İlk yedeğini alabilirsin'}</span>
           </div>
+          {backupInfo.exists && <div className={`cloud-freshness ${freshness.changedSinceLastSync ? 'warning' : 'synced'}`} role="status">{freshness.hasBaseline ? freshness.changedSinceLastSync ? '● Bu cihazda son yedekten sonra değişiklik var.' : '✓ Bu cihaz son alınan yedekle eşleşiyor.' : 'ℹ Bu cihazın son yedekle eşleşme durumu henüz ölçülmedi.'}</div>}
           <div className="cloud-action-grid">
             <button type="button" disabled={busy || !online} onClick={backup}>☁️ Bu cihazı buluta yedekle</button>
             <button type="button" disabled={busy || !online || !backupInfo.exists} onClick={restore}>↙ Buluttaki yedeği getir</button>
@@ -260,8 +289,12 @@ export function CloudAccountPanel() {
       )}
 
       <div className="cloud-local-export">
-        <div><strong>Yerel yedek de alabilirsin</strong><p>Hesap açmadan cihazındaki Lokma verilerini JSON dosyası olarak dışarı aktar.</p></div>
-        <button type="button" onClick={exportLocalSnapshotFile}>↓ Yedeği indir</button>
+        <div><strong>Yerel yedek dosyası</strong><p>Hesap açmadan cihazındaki Lokma verilerini dışarı aktarabilir veya daha önce aldığın yedeği geri yükleyebilirsin.</p></div>
+        <div className="cloud-local-actions">
+          <button type="button" onClick={exportLocalSnapshotFile}>↓ Yedeği indir</button>
+          <button type="button" className="quiet" disabled={busy} onClick={() => backupInputRef.current?.click()}>↑ Yedeği geri yükle</button>
+          <input ref={backupInputRef} className="cloud-backup-file-input" type="file" accept="application/json,.json" onChange={(event) => void importLocalBackup(event.target.files?.[0])} />
+        </div>
       </div>
 
       {message && <div className="cloud-message" role="status" aria-live="polite">{message}</div>}
