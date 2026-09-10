@@ -10,6 +10,7 @@ import './mobile-dashboard-v18.css'
 import './product-cleanup.css'
 import './accessibility.css'
 import './mobile-polish-v2.css'
+import './mobile-v20.css'
 
 async function bootstrap() {
   await initializeNativePersistence()
