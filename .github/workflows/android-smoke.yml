@@ -31,13 +31,16 @@ jobs:
       - name: Create Android shell
         run: npx cap add android
 
-      - name: Sync web build into Android
-        run: npx cap sync android
+      - name: Sync and patch Android shell
+        run: npm run mobile:sync:android
 
-      - name: Verify package identity
+      - name: Verify native contract
         shell: bash
         run: |
-          grep -R "com.fatiharslan.lokma" android/app/build.gradle android/app/build.gradle.kts android/app/src/main/AndroidManifest.xml 2>/dev/null | head -1
+          grep -R "com.fatiharslan.lokma" android/app/build.gradle android/app/build.gradle.kts 2>/dev/null | head -1
+          grep -q 'android.permission.ACCESS_FINE_LOCATION' android/app/src/main/AndroidManifest.xml
+          grep -q 'android:scheme="lokma"' android/app/src/main/AndroidManifest.xml
+          grep -q 'android:host="auth"' android/app/src/main/AndroidManifest.xml
 
       - name: Build debug APK
         working-directory: android
