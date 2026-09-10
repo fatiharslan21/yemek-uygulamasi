@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { useNearbyData } from '../context/NearbyDataContext'
 import { getCookingGuides, guideIsAvailable } from '../services/cookingGuides'
@@ -41,18 +41,18 @@ function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile:
   const averageMealBudget = profile.budget / Math.max(1, totalMeals)
   const proteinShare = Math.round(meal.protein / Math.max(1, plan.nutritionTargets.protein) * 100)
 
-  reasons.push({ emoji: '🥑', title: `${profile.diet} filtrelerinden geçti`, detail: 'Plan motoru önce beslenme tipini ve seçtiğin hassasiyetleri kontrol ediyor.' })
+  reasons.push({ emoji: '🥑', title: `${profile.diet} tercihine uygun`, detail: 'Beslenme tipin ve seçtiğin hassasiyetler plan hazırlanırken dikkate alındı.' })
 
   if (meal.estimatedPrice <= averageMealBudget * 1.15) {
     reasons.push({ emoji: '💸', title: 'Öğün bütçesiyle uyumlu', detail: 'Bu öğünün yaklaşık maliyeti, planındaki öğün başı bütçe bandına yakın veya altında.' })
   } else {
-    reasons.push({ emoji: '⚖️', title: 'Daha pahalı ama hafta içinde dengeleniyor', detail: 'Lokma pahalı bir öğünü ancak diğer günlerdeki daha ekonomik seçimlerle toplam bütçeyi dengeleyebiliyorsa tutuyor.' })
+    reasons.push({ emoji: '⚖️', title: 'Daha pahalı ama hafta içinde dengeleniyor', detail: 'Daha pahalı öğünleri haftanın diğer ekonomik seçimleriyle dengelemeye çalışıyoruz.' })
   }
 
   if (proteinShare >= 20) {
-    reasons.push({ emoji: '💪', title: `Protein hedefinin yaklaşık %${proteinShare}'ünü karşılıyor`, detail: 'Özellikle kilo verme ve bulk hedeflerinde protein puanı seçim sırasında daha yüksek ağırlık alıyor.' })
+    reasons.push({ emoji: '💪', title: `Protein hedefinin yaklaşık %${proteinShare}'ünü karşılıyor`, detail: 'Kilo verme ve bulk hedeflerinde protein dengesi seçimlerde daha fazla ağırlık alır.' })
   } else {
-    reasons.push({ emoji: '🔥', title: 'Günlük enerji dağılımına uyuyor', detail: 'Kalori yükü kahvaltı, öğle, ara öğün ve akşam için belirlenen paylara göre değerlendiriliyor.' })
+    reasons.push({ emoji: '🔥', title: 'Günlük enerji dağılımına uyuyor', detail: 'Kalori yükü kahvaltı, öğle, ara öğün ve akşam için belirlenen paylara göre dağıtılıyor.' })
   }
 
   const reused = (recipe?.ingredients ?? [])
@@ -60,7 +60,7 @@ function buildWhyReasons(meal: PlannedMeal, recipe: Recipe | undefined, profile:
     .filter((item) => item && item.usedInMeals >= 2)
 
   if (reused.length > 0) {
-    reasons.push({ emoji: '♻️', title: `${reused.length} malzemesi başka öğünlerle ortak`, detail: 'Aynı market paketini hafta içinde tekrar kullanmak maliyeti ve elde kalan ürünü azaltmaya yardımcı oluyor.' })
+    reasons.push({ emoji: '♻️', title: `${reused.length} malzemesi başka öğünlerle ortak`, detail: 'Aynı market paketini hafta içinde tekrar kullanmak maliyeti ve elde kalan ürünü azaltmaya yardımcı olur.' })
   }
 
   const sourceRatio = meal.source === 'Evde' ? profile.mealSplit.home : meal.source === 'Sipariş' ? profile.mealSplit.delivery : profile.mealSplit.dineOut
@@ -93,17 +93,27 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
   const restaurantCandidates = useMemo(() => rankRestaurantsForMeal(places, meal).slice(0, 6), [places, meal])
   const assignedRestaurant = restaurantAssignments[meal.id]
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null)
+  const drawerRef = useRef<HTMLElement | null>(null)
   const selectedGuide = cookingGuides.find((item) => item.id === selectedGuideId)
     ?? cookingGuides.find((item) => guideIsAvailable(item, profile.cookingEquipment))
     ?? cookingGuides[0]
   const selectedGuideAvailable = selectedGuide ? guideIsAvailable(selectedGuide, profile.cookingEquipment) : false
 
+  useEffect(() => {
+    drawerRef.current?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
   return (
     <div className="recipe-detail-overlay" role="presentation" onMouseDown={onClose}>
-      <aside className="recipe-detail-drawer" role="dialog" aria-modal="true" aria-label={`${meal.title} detayları`} onMouseDown={(event) => event.stopPropagation()}>
-        <div className="drawer-handle" />
+      <aside ref={drawerRef} tabIndex={-1} className="recipe-detail-drawer" role="dialog" aria-modal="true" aria-label={`${meal.title} detayları`} onMouseDown={(event) => event.stopPropagation()}>
+        <div className="drawer-handle" aria-hidden="true" />
         <header className="recipe-detail-header">
-          <div className="recipe-detail-hero-icon">{meal.emoji}</div>
+          <div className="recipe-detail-hero-icon" aria-hidden="true">{meal.emoji}</div>
           <div className="recipe-detail-heading"><span>{meal.slot} • {meal.source}</span><h2>{meal.title}</h2><p>{meal.subtitle}</p></div>
           <button className="recipe-close-button" type="button" onClick={onClose} aria-label="Detayı kapat">×</button>
         </header>
@@ -116,7 +126,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
         </div>
 
         <section className="recipe-detail-section">
-          <div className="recipe-section-title"><span>🛒</span><div><h3>Bu öğünde ne var?</h3><p>{profile.people} kişi için planlanan miktarlar</p></div></div>
+          <div className="recipe-section-title"><span aria-hidden="true">🛒</span><div><h3>Bu öğünde ne var?</h3><p>{profile.people} kişi için planlanan miktarlar</p></div></div>
           {recipe && recipe.ingredients.length > 0 ? (
             <div className="recipe-ingredient-list">
               {recipe.ingredients.map((ingredient) => {
@@ -125,25 +135,26 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
                 const shoppingItem = plan.shoppingList.find((item) => item.ingredientId === ingredient.ingredientId)
                 return (
                   <div className="recipe-ingredient-row" key={ingredient.ingredientId}>
-                    <span className="recipe-ingredient-emoji">{definition.emoji}</span>
+                    <span className="recipe-ingredient-emoji" aria-hidden="true">{definition.emoji}</span>
                     <div><strong>{definition.name}</strong><small>{shoppingItem && shoppingItem.usedInMeals >= 2 ? `♻️ Haftada ${shoppingItem.usedInMeals} öğünde kullanılıyor` : 'Bu öğün için kullanılıyor'}</small></div>
                     <b>{quantityText(ingredient.quantity * profile.people, definition.unit)}</b>
                   </div>
                 )
               })}
             </div>
-          ) : <div className="recipe-empty-note">Bu dışarı öğününün gerçek içerik ve porsiyon bilgisi menü veri katmanı bağlandığında gelecek.</div>}
+          ) : <div className="recipe-empty-note">Bu dışarı öğününün içerik ve porsiyon bilgisi işletmenin menü verisine göre değişebilir.</div>}
           {recipe?.allergens.length ? <div className="recipe-allergen-note">⚠️ Katalog alerjen etiketi: {recipe.allergens.join(', ')}</div> : null}
+          {profile.allergies.length > 0 && <div className="recipe-allergen-note">🛡️ Hassasiyet filtresi yardımcı bir kontroldür. Ambalaj içeriğini, restoran bilgisini ve çapraz bulaşma riskini ayrıca kontrol et.</div>}
         </section>
 
         <section className="recipe-detail-section why-section">
-          <div className="recipe-section-title"><span>🧠</span><div><h3>Lokma bunu neden seçti?</h3><p>Plan motorunun bu öğüne verdiği başlıca artılar</p></div></div>
-          <div className="why-reason-list">{whyReasons.map((reason) => <article key={reason.title}><span>{reason.emoji}</span><div><strong>{reason.title}</strong><p>{reason.detail}</p></div></article>)}</div>
+          <div className="recipe-section-title"><span aria-hidden="true">✨</span><div><h3>Lokma bunu neden seçti?</h3><p>Bu öğünün haftalık planındaki rolü</p></div></div>
+          <div className="why-reason-list">{whyReasons.map((reason) => <article key={reason.title}><span aria-hidden="true">{reason.emoji}</span><div><strong>{reason.title}</strong><p>{reason.detail}</p></div></article>)}</div>
         </section>
 
         {meal.source === 'Evde' ? (
           <section className="recipe-detail-section cooking-method-section">
-            <div className="recipe-section-title"><span>👨‍🍳</span><div><h3>Nasıl pişirmek istersin?</h3><p>Aynı öğün için mutfağına uygun farklı hazırlama senaryoları</p></div></div>
+            <div className="recipe-section-title"><span aria-hidden="true">👨‍🍳</span><div><h3>Nasıl pişirmek istersin?</h3><p>Aynı öğün için mutfağına uygun farklı hazırlama seçenekleri</p></div></div>
 
             <div className="cooking-equipment-summary">
               {(profile.cookingEquipment.length ? profile.cookingEquipment : ['Ekipman seçilmedi']).map((item) => <span key={item}>✓ {item}</span>)}
@@ -153,7 +164,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
               {cookingGuides.map((guide) => {
                 const available = guideIsAvailable(guide, profile.cookingEquipment)
                 const active = selectedGuide?.id === guide.id
-                return <button key={guide.id} type="button" className={`cooking-method-tab ${active ? 'active' : ''} ${available ? '' : 'unavailable'}`} onClick={() => setSelectedGuideId(guide.id)}><span>{guide.emoji}</span>{guide.label}{!available && <em>ekipman eksik</em>}</button>
+                return <button key={guide.id} type="button" aria-pressed={active} className={`cooking-method-tab ${active ? 'active' : ''} ${available ? '' : 'unavailable'}`} onClick={() => setSelectedGuideId(guide.id)}><span aria-hidden="true">{guide.emoji}</span>{guide.label}{!available && <em>ekipman eksik</em>}</button>
               })}
             </div>
 
@@ -165,7 +176,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
                     ? <span>✨ Ek ekipman gerektirmez</span>
                     : selectedGuide.equipment.map((equipment) => <span key={equipment} className={profile.cookingEquipment.includes(equipment) ? '' : 'missing'}>{profile.cookingEquipment.includes(equipment) ? '✓' : '＋'} {equipment}</span>)}
                 </div>
-                {!selectedGuideAvailable && selectedGuide.equipment.length > 0 && <div className="cooking-method-note">Bu yöntem kullanılabilir bir alternatif ama gerekli ekipmanların tamamı mutfak profilinde seçili değil. Tercihleri düzenleyerek ekleyebilirsin.</div>}
+                {!selectedGuideAvailable && selectedGuide.equipment.length > 0 && <div className="cooking-method-note">Bu yöntem için gerekli ekipmanların tamamı mutfak profilinde seçili değil. Tercihlerini düzenleyerek ekleyebilirsin.</div>}
                 <ol className="recipe-step-list">{selectedGuide.steps.map((step) => <li key={step}>{step}</li>)}</ol>
                 {selectedGuide.note && <div className="cooking-method-note">⚠️ {selectedGuide.note}</div>}
               </div>
@@ -173,11 +184,11 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
           </section>
         ) : (
           <section className="recipe-detail-section restaurant-match-section">
-            <div className="recipe-section-title"><span>📍</span><div><h3>Bu öğünü nereden alalım?</h3><p>Nearby taramasındaki gerçek restoranları öğün türü + mutfak etiketi + mesafeye göre sıralıyoruz</p></div></div>
+            <div className="recipe-section-title"><span aria-hidden="true">📍</span><div><h3>Bu öğünü nereden alalım?</h3><p>Yakındaki restoranları öğün türü, mutfak etiketi ve mesafeye göre sıralıyoruz.</p></div></div>
 
             {assignedRestaurant && (
               <div className="assigned-restaurant-card assigned-rich">
-                <span>✓</span>
+                <span aria-hidden="true">✓</span>
                 <div><strong>{assignedRestaurant.name}</strong><p>{assignedRestaurant.subtype} • {distanceText(assignedRestaurant.distanceMeters)}{assignedRestaurant.cuisine ? ` • ${assignedRestaurant.cuisine.split(';').join(', ')}` : ''}</p><BusinessMetadata place={assignedRestaurant} /></div>
                 <button type="button" onClick={() => assignRestaurant(meal.id, undefined)}>Değiştir</button>
               </div>
@@ -189,7 +200,7 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
                   const selected = assignedRestaurant?.id === place.id
                   const serviceBits = [place.delivery === true ? '🛵' : '', place.takeaway === true ? '🥡' : '', place.website ? '🌐' : ''].filter(Boolean).join(' ')
                   return (
-                    <button key={place.id} type="button" className={`restaurant-candidate ${selected ? 'selected' : ''}`} onClick={() => assignRestaurant(meal.id, selected ? undefined : place)}>
+                    <button key={place.id} type="button" aria-pressed={selected} className={`restaurant-candidate ${selected ? 'selected' : ''}`} onClick={() => assignRestaurant(meal.id, selected ? undefined : place)}>
                       <span className="restaurant-rank">{index + 1}</span>
                       <div><strong>{place.name}</strong><p>{place.subtype}{place.cuisine ? ` • ${place.cuisine.split(';').join(', ')}` : ''}{serviceBits ? ` • ${serviceBits}` : ''}</p></div>
                       <b>📏 {distanceText(place.distanceMeters)}</b>
@@ -200,11 +211,11 @@ export function RecipeDetailDrawer({ meal, profile, plan, locked, onClose, onSwa
               </div>
             ) : (
               <div className="restaurant-empty-state">
-                <span>📡</span><div><strong>Henüz restoran verisi yok.</strong><p>Dashboard’daki “Çevremi tara” butonunu çalıştır; bulunan gerçek restoranlar burada otomatik aday olacak.</p></div>
+                <span aria-hidden="true">📡</span><div><strong>Henüz restoran listesi yok.</strong><p>Hafta ekranındaki “Restoranları bul” seçeneğini kullan; bulunan restoranlar burada otomatik aday olur.</p></div>
               </div>
             )}
 
-            <div className="restaurant-data-note">ℹ️ İşletme adı, konum, mesafe ve yukarıda görünüyorsa iletişim/hizmet etiketleri OpenStreetMap kaydından gelir ve eksik veya güncel olmayabilir. Gerçek menü fiyatı bilinmediği için öğünün bütçe tutarı hâlâ Lokma demo tahminidir.</div>
+            <div className="restaurant-data-note">ℹ️ İşletme adı, konum, mesafe ve görünüyorsa iletişim/hizmet bilgileri OpenStreetMap kaydından gelir ve eksik veya güncel olmayabilir. Gerçek menü fiyatı bilinmiyorsa öğünün bütçe tutarı yaklaşık planlama değeridir.</div>
           </section>
         )}
 
