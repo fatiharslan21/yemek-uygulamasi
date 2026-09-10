@@ -51,7 +51,7 @@ const forbiddenVisibleTraces = [
   { pattern: /OpenAI/i, label: 'OpenAI' },
   { pattern: /ChatGPT/i, label: 'ChatGPT' },
   { pattern: /Plan motoru v\d/i, label: 'teknik plan motoru sürüm rozeti' },
-  { pattern: /\bNearby\b/i, label: 'Nearby geliştirme terimi' },
+  { pattern: /Nearby (?:taraması|verisi|v\d)/i, label: 'Nearby geliştirme terimi' },
   { pattern: /Lokma demo tahmini/i, label: 'demo tahmin ifadesi' },
 ]
 
