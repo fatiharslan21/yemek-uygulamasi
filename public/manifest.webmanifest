@@ -1,12 +1,22 @@
 {
+  "id": "/",
   "name": "Lokma — Akıllı Yemek Planlayıcı",
   "short_name": "Lokma",
-  "description": "Bütçene, hedeflerine, mutfağına ve konumuna göre akıllı yemek planı.",
+  "description": "Bütçene, hedeflerine, mutfağına ve konumuna göre haftalık yemek planı.",
   "lang": "tr-TR",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f7f4eb",
   "theme_color": "#315f49",
   "orientation": "portrait-primary",
-  "categories": ["food", "lifestyle", "health"]
+  "categories": ["food", "lifestyle", "health"],
+  "icons": [
+    {
+      "src": "/icons/lokma-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
