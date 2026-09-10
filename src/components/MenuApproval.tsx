@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { RECIPE_LIBRARY_STATS } from '../data/recipeCatalog'
 import { swapMealInEditedPlan } from '../engine/planEditor'
 import { generateWeeklyPlan } from '../engine/planEngine'
 import type { UserPlanProfile, WeeklyPlan } from '../types'
@@ -84,6 +85,7 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
         <span className="eyebrow">🍽️ Önce menünü gör</span>
         <h1>İşte {profile.days} günlük yemek menün.</h1>
         <p>Plan başlamadan önce tamamını incele. Tek bir öğünü sevmediysen yalnızca onu değiştirebilir, istersen bütün menüyü yeniden oluşturabilirsin.</p>
+        <div className="menu-variety-note">✨ {RECIPE_LIBRARY_STATS.recipes} farklı yemek seçeneğinden sana uyanlar arasından hazırlandı. “Değiştir” dedikçe uygun alternatifler arasında dolaşabilirsin.</div>
         <div className="menu-approval-metrics">
           <article><span>💸 Haftalık tahmin</span><strong>{money(plan.totalCost)} ₺</strong><small>{money(profile.budget)} ₺ bütçe</small></article>
           <article><span>🔥 Günlük ortalama</span><strong>{plan.averageCalories} kcal</strong><small>hedef ≈ {plan.nutritionTargets.calories}</small></article>
