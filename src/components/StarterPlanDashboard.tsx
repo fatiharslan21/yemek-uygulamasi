@@ -4,7 +4,6 @@ import { rebuildEditedPlan, swapMealInEditedPlan } from '../engine/planEditor'
 import { RecipeDetailDrawer } from './RecipeDetailDrawer'
 import { NearbyPlacesPanel } from './NearbyPlacesPanel'
 import { MealBusinessLine } from './MealBusinessLine'
-import { MarketShoppingBridge } from './MarketShoppingBridge'
 import { PriceIntelligencePanel } from './PriceIntelligencePanel'
 import { TodayView } from './TodayView'
 import { BrowserLocationError, requestBrowserLocation, type BrowserCoordinates } from '../services/browserLocation'
@@ -231,14 +230,14 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
           status: 'success',
           coords,
           resolved,
-          message: 'Canlı konum adres bilgisine çevrildi. Nearby taraması bu noktayı kullanabilir.',
+          message: 'Canlı konum adres bilgisine çevrildi. Restoran araması bu noktayı kullanabilir.',
         })
       } catch {
         setLocationStatus({
           status: 'success',
           coords,
           resolved: { city: profile.city, district: profile.district, neighborhood: profile.neighborhood },
-          message: 'Koordinat yenilendi fakat adres otomatik çözülemedi; plan profilindeki il / ilçe / mahalle gösteriliyor.',
+          message: 'Konum yenilendi fakat adres otomatik çözülemedi; plan profilindeki il / ilçe / mahalle gösteriliyor.',
         })
       }
     } catch (error) {
@@ -249,17 +248,17 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
 
   return (
     <main className={`dashboard-page plan-v1-page dashboard-tab-${tab}`}>
-      <nav className="topbar shell dashboard-nav">
-        <button className="brand brand-button" type="button" onClick={onHome}><span className="brand-mark">🍋</span><span>lokma</span></button>
+      <nav className="topbar shell dashboard-nav" aria-label="Ana gezinme">
+        <button className="brand brand-button" type="button" onClick={onHome} aria-label="Lokma ana sayfa"><span className="brand-mark">🍋</span><span>lokma</span></button>
         <div className="nav-links dashboard-tabs">
-          <button type="button" className={`dashboard-nav-button ${tab === 'today' ? 'active' : ''}`} onClick={() => setTab('today')}>☀️ Bugün</button>
-          <button type="button" className={`dashboard-nav-button ${tab === 'week' ? 'active' : ''}`} onClick={() => setTab('week')}>📅 Hafta</button>
-          <button type="button" className={`dashboard-nav-button ${tab === 'shopping' ? 'active' : ''}`} onClick={() => setTab('shopping')}>🛒 Liste <span className="nav-count">{plan.shoppingList.length}</span></button>
-          <button type="button" className="profile-pill" onClick={onEdit}>👤 {profile.name || 'Profil'} <span>⚙️</span></button>
+          <button type="button" className={`dashboard-nav-button ${tab === 'today' ? 'active' : ''}`} aria-current={tab === 'today' ? 'page' : undefined} onClick={() => setTab('today')}>☀️ Bugün</button>
+          <button type="button" className={`dashboard-nav-button ${tab === 'week' ? 'active' : ''}`} aria-current={tab === 'week' ? 'page' : undefined} onClick={() => setTab('week')}>📅 Hafta</button>
+          <button type="button" className={`dashboard-nav-button ${tab === 'shopping' ? 'active' : ''}`} aria-current={tab === 'shopping' ? 'page' : undefined} onClick={() => setTab('shopping')}>🛒 Liste <span className="nav-count">{plan.shoppingList.length}</span></button>
+          <button type="button" className="profile-pill" onClick={onEdit}>👤 {profile.name || 'Profil'} <span aria-hidden="true">⚙️</span></button>
         </div>
       </nav>
 
-      {notice && <section className="shell plan-editor-notice" role="status"><span>✨</span><p>{notice}</p><button type="button" onClick={() => setNotice(null)} aria-label="Bildirimi kapat">×</button></section>}
+      {notice && <section className="shell plan-editor-notice" role="status" aria-live="polite"><span>✨</span><p>{notice}</p><button type="button" onClick={() => setNotice(null)} aria-label="Bildirimi kapat">×</button></section>}
 
       {tab === 'today' ? (
         <TodayView
@@ -280,8 +279,8 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
         <>
           <section className="dashboard-hero shell plan-engine-hero">
             <div>
-              <span className="hero-badge">🧠 Plan motoru v1.8 çalışıyor</span>
-              <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hesapladı.</em></h1>
+              <span className="hero-badge">✨ Planın hazır</span>
+              <h1>{profile.name ? `${profile.name}, ` : ''}haftanı <em>Lokma hazırladı.</em></h1>
               <p>{profile.days} gün • {profile.diet} • {profile.goal} • {profile.people} kişi • {readableTitle}</p>
               <div className="engine-status-row">
                 <span>🎯 ≈ {plan.nutritionTargets.calories} kcal hedef</span>
@@ -321,13 +320,13 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
           {plan.adjustedForBudget && (
             <section className="shell budget-smart-note">
               <span className="budget-smart-icon">🪄</span>
-              <div><strong>Bütçeyi korumak için planı akıllıca dengeledik.</strong><p>Seçtiğin ev/sipariş oranını başlangıç kabul ettik; tahmini toplam bütçeyi aşınca {plan.convertedOutsideMeals} dışarı öğününü daha ekonomik ev yemeğine çevirdik.</p></div>
+              <div><strong>Bütçeyi korumak için planı dengeledik.</strong><p>Seçtiğin ev/sipariş oranını başlangıç kabul ettik; tahmini toplam bütçeyi aşınca {plan.convertedOutsideMeals} dışarı öğününü daha ekonomik ev yemeğine çevirdik.</p></div>
               <span className="budget-note-pill">{budgetOkay ? `+${money(plan.remainingBudget)} ₺ pay` : `${money(Math.abs(plan.remainingBudget))} ₺ aşım`}</span>
             </section>
           )}
 
-          <section className="plan-metrics shell engine-metrics">
-            <article className={budgetOkay ? '' : 'metric-warning'}><span>💸 Gerçek plan bütçesi</span><strong>{money(plan.totalCost)} ₺</strong><small>{money(profile.budget)} ₺ haftalık limitin</small><div className="metric-progress"><i style={{ width: `${Math.min(100, plan.budgetUsagePct)}%` }} /></div></article>
+          <section className="plan-metrics shell engine-metrics" aria-label="Plan özeti">
+            <article className={budgetOkay ? '' : 'metric-warning'}><span>💸 Haftalık plan tahmini</span><strong>{money(plan.totalCost)} ₺</strong><small>{money(profile.budget)} ₺ haftalık limitin</small><div className="metric-progress"><i style={{ width: `${Math.min(100, plan.budgetUsagePct)}%` }} /></div></article>
             <article className={budgetOkay ? 'metric-good' : 'metric-warning'}><span>{budgetOkay ? '💚 Tahmini kalan' : '⚠️ Bütçe farkı'}</span><strong>{money(Math.abs(plan.remainingBudget))} ₺</strong><small>{budgetOkay ? 'Limit içinde kaldık' : 'Son değişiklik bütçeyi aştı'}</small></article>
             <article><span>🔥 Günlük ortalama</span><strong>{plan.averageCalories} kcal</strong><small>{calorieDelta === 0 ? 'Hedefle aynı' : `${calorieDelta > 0 ? '+' : ''}${calorieDelta} kcal hedef farkı`}</small></article>
             <article><span>💪 Protein ortalaması</span><strong>{plan.averageProtein} g</strong><small>{proteinDelta === 0 ? 'Hedefle aynı' : `${proteinDelta > 0 ? '+' : ''}${proteinDelta} g hedef farkı`}</small></article>
@@ -337,7 +336,7 @@ export function StarterPlanDashboard({ profile, onEdit, onHome }: StarterPlanDas
             <div><span>🛒 Market paketleri</span><strong>{money(plan.marketCost)} ₺</strong></div><span className="split-plus">+</span>
             <div><span>🛵 Sipariş / dışarı</span><strong>{money(plan.outsideCost)} ₺</strong></div><span className="split-equals">=</span>
             <div className="split-total"><span>Haftalık tahmin</span><strong>{money(plan.totalCost)} ₺</strong></div>
-            <small>Bir öğünü değiştirdiğinde bu rakamlar ve alışveriş listesi anında yeniden hesaplanır. Market karşılaştırma bölümündeki fiyatlar ayrıca kaynağıyla etiketlenir.</small>
+            <small>Bir öğünü değiştirdiğinde bu rakamlar ve alışveriş listesi yeniden hesaplanır. Market fiyat bantları planlama amaçlı yaklaşık değerlerdir.</small>
           </section>
 
           {tab === 'week'
@@ -378,10 +377,10 @@ function WeekView({ profile, plan, planStartedAt, lockedMeals, onSwap, onToggleL
     <>
       <section className="week-section shell engine-week-section">
         <div className="section-title-row">
-          <div><span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span><h2>Gün gün yemek planın</h2><p>Plan artık gerçek tarihle ilerliyor. Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açabilirsin.</p></div>
+          <div><span className="eyebrow">📅 {plan.days.length} günlük düzenlenebilir plan</span><h2>Gün gün yemek planın</h2><p>Plan gerçek tarihle ilerliyor. Bir öğünü değiştirebilir, sevdiğini kilitleyebilir veya detayını açabilirsin.</p></div>
           <button className="shopping-jump-button" type="button" onClick={onShopping}>🛒 Listeye geç →</button>
         </div>
-        <div className="meal-editor-guide"><span><b>👁 Detay</b> evdeyse pişirme yöntemi, dışarıdaysa gerçek restoran adayı gösterir.</span><span><b>↻ Değiştir</b> yeni alternatif bulur.</span><span><b>🔒 Sabitle</b> sonraki karıştırmalarda korur.</span></div>
+        <div className="meal-editor-guide"><span><b>👁 Detay</b> evdeyse pişirme yöntemi, dışarıdaysa yakın restoran seçeneklerini gösterir.</span><span><b>↻ Değiştir</b> yeni alternatif bulur.</span><span><b>🔒 Sabitle</b> sonraki karıştırmalarda korur.</span></div>
         <div className="engine-day-grid">
           {plan.days.map((day) => {
             const caloriePct = Math.round(day.totalCalories / Math.max(1, plan.nutritionTargets.calories) * 100)
@@ -389,7 +388,7 @@ function WeekView({ profile, plan, planStartedAt, lockedMeals, onSwap, onToggleL
             const stateLabel = day.index === todayIndex ? 'Bugün' : day.index < todayIndex ? 'Geçmiş' : 'Planlı'
             return (
               <article className={`engine-day-card ${day.index === todayIndex ? 'is-today' : ''}`} key={day.index}>
-                <div className="engine-day-header"><div><span className="day-number">{String(day.index + 1).padStart(2, '0')}</span><div><h3>{formatPlanDate(planStartedAt, day.index, true)}</h3><small>≈ {money(day.totalEstimatedPrice)} ₺ marjinal öğün değeri</small></div></div><span className="day-goal-chip">{stateLabel}</span></div>
+                <div className="engine-day-header"><div><span className="day-number">{String(day.index + 1).padStart(2, '0')}</span><div><h3>{formatPlanDate(planStartedAt, day.index, true)}</h3><small>≈ {money(day.totalEstimatedPrice)} ₺ öğün toplamı</small></div></div><span className="day-goal-chip">{stateLabel}</span></div>
                 <div className="engine-meal-list">
                   {day.meals.map((meal, mealIndex) => (
                     <MealRow
@@ -410,7 +409,7 @@ function WeekView({ profile, plan, planStartedAt, lockedMeals, onSwap, onToggleL
       </section>
 
       <section className="reuse-insight shell">
-        <div className="reuse-insight-copy"><span className="step-kicker">♻️ Lokma'nın maliyet numarası</span><h2>{plan.reusedIngredientCount} malzemeyi haftada birden fazla öğünde kullanıyoruz.</h2><p>Alışverişi tarif tarif değil, haftanın tamamı üzerinden topluyoruz. Öğün değiştirdiğinde bu zincir de tekrar hesaplanıyor.</p><div className="reuse-stats"><span><b>%{plan.reuseScore}</b> tekrar kullanım</span><span><b>≈ {money(plan.estimatedWasteSaving)} ₺</b> paket avantajı</span><span><b>{profile.people} kişi</b> için miktarlandı</span></div></div>
+        <div className="reuse-insight-copy"><span className="step-kicker">♻️ Sepeti daha iyi kullan</span><h2>{plan.reusedIngredientCount} malzemeyi haftada birden fazla öğünde kullanıyoruz.</h2><p>Alışverişi tarif tarif değil, haftanın tamamı üzerinden topluyoruz. Öğün değiştirdiğinde bu zincir de tekrar hesaplanıyor.</p><div className="reuse-stats"><span><b>%{plan.reuseScore}</b> tekrar kullanım</span><span><b>≈ {money(plan.estimatedWasteSaving)} ₺</b> paket avantajı</span><span><b>{profile.people} kişi</b> için miktarlandı</span></div></div>
         <button type="button" onClick={onShopping}>Alışveriş listesini aç <span>→</span></button>
       </section>
     </>
@@ -428,7 +427,7 @@ type MealRowProps = {
 function MealRow({ meal, locked, onDetail, onSwap, onToggleLock }: MealRowProps) {
   return (
     <div className={`engine-meal-row editable-meal-row ${locked ? 'is-locked' : ''}`}>
-      <span className="meal-slot">{meal.slot}</span><div className="engine-meal-emoji">{meal.emoji}</div>
+      <span className="meal-slot">{meal.slot}</span><div className="engine-meal-emoji" aria-hidden="true">{meal.emoji}</div>
       <div className="engine-meal-main">
         <div><strong>{meal.title}</strong><span className={`source-chip ${sourceClass(meal.source)}`}>{sourceEmoji(meal.source)} {meal.source}</span>{locked && <span className="meal-locked-chip">🔒 sabit</span>}</div>
         <p>{meal.subtitle}</p>
@@ -449,11 +448,10 @@ type ShoppingViewProps = {
 function ShoppingView({ groups, plan, onWeek }: ShoppingViewProps) {
   return (
     <section className="shopping-page-section shell">
-      <div className="section-title-row shopping-title-row"><div><span className="eyebrow">🛒 Canlı güncellenen paket listesi</span><h2>Öğün değiştiyse sepet de değişti.</h2><p>İhtiyaç miktarını markette satılan paket boyuna yuvarlıyoruz. Bir tarifi değiştirdiğinde malzemeler burada anında yeniden hesaplanıyor.</p></div><button className="shopping-jump-button" type="button" onClick={onWeek}>← Haftaya dön</button></div>
+      <div className="section-title-row shopping-title-row"><div><span className="eyebrow">🛒 Alışveriş listesi</span><h2>Öğün değiştiyse sepet de değişti.</h2><p>İhtiyaç miktarını markette satılan paket boyuna yuvarlıyoruz. Bir tarifi değiştirdiğinde malzemeler burada yeniden hesaplanıyor.</p></div><button className="shopping-jump-button" type="button" onClick={onWeek}>← Haftaya dön</button></div>
 
-      <div className="shopping-overview-grid"><article><span>🛍️ Toplam ürün</span><strong>{plan.shoppingList.length}</strong><small>farklı market kalemi</small></article><article><span>💸 Katalog market tahmini</span><strong>{money(plan.marketCost)} ₺</strong><small>paket fiyatları üzerinden</small></article><article><span>♻️ Tekrar kullanılan</span><strong>{plan.reusedIngredientCount}</strong><small>birden fazla öğünde</small></article><article><span>✨ Paket avantajı</span><strong>≈ {money(plan.estimatedWasteSaving)} ₺</strong><small>tahmini</small></article></div>
+      <div className="shopping-overview-grid"><article><span>🛍️ Toplam ürün</span><strong>{plan.shoppingList.length}</strong><small>farklı market kalemi</small></article><article><span>💸 Market tahmini</span><strong>{money(plan.marketCost)} ₺</strong><small>paket referansları üzerinden</small></article><article><span>♻️ Tekrar kullanılan</span><strong>{plan.reusedIngredientCount}</strong><small>birden fazla öğünde</small></article><article><span>✨ Paket avantajı</span><strong>≈ {money(plan.estimatedWasteSaving)} ₺</strong><small>yaklaşık</small></article></div>
 
-      <MarketShoppingBridge />
       <PriceIntelligencePanel shoppingList={plan.shoppingList} catalogTotal={plan.marketCost} />
 
       <div className="shopping-groups">
@@ -463,7 +461,7 @@ function ShoppingView({ groups, plan, onWeek }: ShoppingViewProps) {
             <div className="shopping-item-list">
               {group.items.map((item) => (
                 <article className="shopping-item" key={item.ingredientId}>
-                  <div className="shopping-item-emoji">{item.emoji}</div>
+                  <div className="shopping-item-emoji" aria-hidden="true">{item.emoji}</div>
                   <div className="shopping-item-main"><strong>{item.name}</strong><small>İhtiyaç: {quantityText(item)}</small></div>
                   <div className="shopping-package"><span>{item.packages} × {item.packageLabel}</span><strong>{money(item.estimatedCost)} ₺</strong></div>
                   <div className={`reuse-badge ${item.usedInMeals >= 2 ? 'is-reused' : ''}`}>{item.usedInMeals >= 2 ? `♻️ ${item.usedInMeals} öğünde` : '1 öğünde'}</div>
@@ -474,7 +472,7 @@ function ShoppingView({ groups, plan, onWeek }: ShoppingViewProps) {
         ))}
       </div>
 
-      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Gerçek ile simülasyonu ayırıyoruz.</strong> Market adı/mesafesi gerçek Nearby verisi; fiyat istihbaratı bölümündeki rakamlar canlı sağlayıcı bağlanana kadar simülasyondur. Katalog ürün fiyatları da planlama amaçlı demo veridir.</p></div>
+      <div className="shopping-demo-note"><span>ℹ️</span><p><strong>Fiyatlar yaklaşık planlama aralığıdır.</strong> BİM, A101, ŞOK, Migros ve CarrefourSA karşılaştırmaları canlı mağaza fiyatı değildir; marka, şube, kampanya ve gramaja göre değişebilir.</p></div>
     </section>
   )
 }
