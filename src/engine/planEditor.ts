@@ -1,6 +1,7 @@
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { recipePassesCatalogSafety } from '../services/catalogSafety'
 import { recipeSupportsEquipment } from '../services/cookingCompatibility'
+import { getRecipePreferenceScore } from '../services/mealPreferenceSignals'
 import { calculateNutritionTargets } from './basePlanEngine'
 import type { PlannedDay, PlannedMeal, Recipe, ShoppingListItem, UserPlanProfile, WeeklyPlan } from '../types'
 
@@ -153,8 +154,9 @@ function alternativeScore(recipe: Recipe, currentMeal: PlannedMeal, profile: Use
   const reuseMatches = recipe.ingredients.filter((ingredient) => shoppingIngredientIds.has(ingredient.ingredientId)).length
   const reuseBonus = Math.min(0.22, reuseMatches * 0.055)
   const costWeight = profile.stylePreset === 'Ekonomik' ? 0.72 : 0.38
+  const learnedPreference = Math.max(-1.5, Math.min(1.5, getRecipePreferenceScore(recipe)))
 
-  return (calorieGap * 0.48) + (proteinGap * 0.62) + (priceGap * costWeight) + sourcePenalty + usagePenalty - reuseBonus
+  return (calorieGap * 0.48) + (proteinGap * 0.62) + (priceGap * costWeight) + sourcePenalty + usagePenalty - reuseBonus - learnedPreference * 0.16
 }
 
 export function swapMealInEditedPlan(
