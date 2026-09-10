@@ -18,7 +18,7 @@ export function LegalCenter() {
       </div>
 
       <div className="legal-ad-policy">
-        <div><span>🌿</span><div><strong>Reklam sınırımız</strong><p>İlk {AD_POLICY_SUMMARY.adFreeDays} gün reklam yok. Onboarding, menü onayı, tarif adımları ve kilo takibinde reklam gösterilmez. Gelecekte reklam açılırsa yalnızca hafta veya alışveriş ekranında en fazla {AD_POLICY_SUMMARY.maxNativeCardsPerScreen} doğal sponsor kartı hedeflenir.</p></div></div>
+        <div><span>🌿</span><div><strong>Reklam sınırımız</strong><p>İlk {AD_POLICY_SUMMARY.adFreeDays} gün tamamen reklamsızdır. Bugün, onboarding, menü onayı, tarif adımları, kilo takibi ve profil ekranında reklam gösterilmez. Gelecekte reklam açılırsa yalnızca Hafta veya Alışveriş ekranında en fazla {AD_POLICY_SUMMARY.maxNativeCardsPerScreen} doğal sponsor kartı ve en az {AD_POLICY_SUMMARY.minHoursBetweenSponsoredCards} saat aralık hedeflenir.</p></div></div>
       </div>
 
       <div className="legal-terms-note">Lokma’daki tahmini fiyat, beslenme hedefi ve işletme bilgileri karar desteğidir. Kullanıcı satın alma, tüketim ve sağlık kararlarında güncel kaynakları ayrıca kontrol etmelidir.</div>
