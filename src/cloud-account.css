@@ -4,7 +4,7 @@
 .cloud-privacy-note p,.cloud-not-configured p,.cloud-local-export p{margin:3px 0 0;color:var(--muted);line-height:1.45}
 .cloud-auth-box,.cloud-signed-in{padding:16px;border:1px solid var(--line);border-radius:20px;background:var(--paper)}
 .cloud-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.cloud-auth-tabs button,.cloud-action-grid button,.cloud-local-export button,.cloud-auth-fields>button,.cloud-delete-account,.cloud-forgot-password{border:0;border-radius:14px;padding:12px 14px;font:inherit;font-weight:800;cursor:pointer}
+.cloud-auth-tabs button,.cloud-action-grid button,.cloud-local-export button,.cloud-auth-fields>button,.cloud-delete-account,.cloud-delete-backup,.cloud-forgot-password{border:0;border-radius:14px;padding:12px 14px;font:inherit;font-weight:800;cursor:pointer}
 .cloud-auth-tabs button{background:#f0f2ed;color:var(--muted)}
 .cloud-auth-tabs button.active,.cloud-auth-fields>button,.cloud-action-grid button{background:var(--green);color:white}
 .cloud-auth-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
@@ -15,6 +15,7 @@
 .cloud-user-line div{display:grid}.cloud-user-line small{color:var(--muted)}
 .cloud-action-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:10px}
 .cloud-action-grid button.quiet{background:#f0f2ed;color:var(--ink)}
+.cloud-delete-backup{margin-top:10px;background:#f5f1e8;color:#665b43;border:1px solid rgba(102,91,67,.17)}
 .cloud-delete-account{margin-top:10px;background:transparent;color:#9d3b32;border:1px solid rgba(157,59,50,.22)}
 .cloud-delete-account:hover{background:rgba(157,59,50,.06)}
 .cloud-local-export{justify-content:space-between;align-items:center}
@@ -28,4 +29,4 @@
 .cloud-freshness{margin:0 0 14px;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:800}.cloud-freshness.synced{background:var(--mint);color:var(--green-dark)}.cloud-freshness.warning{background:#fff3d8;color:#745719}
 .cloud-forgot-password{margin-top:10px;padding-left:0;background:transparent;color:var(--green-dark);text-decoration:underline;text-underline-offset:3px}
 .cloud-recovery-box{display:grid;gap:14px}.cloud-recovery-box>div:first-child{display:grid;gap:4px}.cloud-recovery-box h3,.cloud-recovery-box p{margin:0}.cloud-recovery-box p{color:var(--muted)}.cloud-recovery-icon{font-size:28px}.recovery-fields{grid-template-columns:1fr 1fr auto}
-@media(max-width:720px){.cloud-auth-fields,.cloud-action-grid,.recovery-fields{grid-template-columns:1fr}.cloud-local-export{align-items:stretch;flex-direction:column}.cloud-local-actions{display:grid;grid-template-columns:1fr;justify-content:stretch}.cloud-local-export button,.cloud-delete-account{width:100%}.cloud-backup-status{align-items:flex-start;flex-direction:column}.cloud-auth-tabs button,.cloud-action-grid button,.cloud-auth-fields>button,.cloud-local-export button,.cloud-delete-account{min-height:46px}}
+@media(max-width:720px){.cloud-auth-fields,.cloud-action-grid,.recovery-fields{grid-template-columns:1fr}.cloud-local-export{align-items:stretch;flex-direction:column}.cloud-local-actions{display:grid;grid-template-columns:1fr;justify-content:stretch}.cloud-local-export button,.cloud-delete-account,.cloud-delete-backup{width:100%}.cloud-backup-status{align-items:flex-start;flex-direction:column}.cloud-auth-tabs button,.cloud-action-grid button,.cloud-auth-fields>button,.cloud-local-export button,.cloud-delete-account,.cloud-delete-backup{min-height:46px}}
