@@ -1,6 +1,6 @@
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { cloudClient } from './cloudClient'
+import { cloudConfigured } from './cloudConfig'
 
 const RECOVERY_KEY = 'lokma.pending-password-recovery'
 
@@ -27,7 +27,14 @@ function recoveryParams(url: URL) {
   }
 }
 
+async function getCloudClient() {
+  if (!cloudConfigured) return null
+  const module = await import('./cloudClient')
+  return module.cloudClient
+}
+
 async function handleAuthUrl(rawUrl: string) {
+  const cloudClient = await getCloudClient()
   if (!cloudClient) return
 
   let url: URL
@@ -61,8 +68,9 @@ async function handleAuthUrl(rawUrl: string) {
 }
 
 export async function initializeNativeAuthLinks() {
-  if (cloudClient) {
-    cloudClient.auth.onAuthStateChange((event) => {
+  if (cloudConfigured) {
+    const cloudClient = await getCloudClient()
+    cloudClient?.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') markPasswordRecoveryPending()
     })
   }
