@@ -2,9 +2,6 @@ name: Build Phone Preview
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.preview-trigger'
 
 permissions:
   contents: write
