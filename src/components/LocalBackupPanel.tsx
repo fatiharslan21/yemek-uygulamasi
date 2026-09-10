@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { exportLocalSnapshotFile, parseLocalSnapshotFile, restoreLocalCloudSnapshot } from '../services/cloudSync'
+import { exportLocalSnapshotFile, parseLocalSnapshotFile, restoreLocalSnapshot } from '../services/localBackup'
 import '../cloud-account.css'
 
 export function LocalBackupPanel() {
@@ -15,7 +15,7 @@ export function LocalBackupPanel() {
       const snapshot = await parseLocalSnapshotFile(file)
       const confirmed = window.confirm('Bu yedek cihazındaki mevcut Lokma verilerinin yerine geçecek. Devam etmek istiyor musun?')
       if (!confirmed) return
-      restoreLocalCloudSnapshot(snapshot)
+      restoreLocalSnapshot(snapshot)
       window.location.reload()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Yedek dosyası geri yüklenemedi.')
