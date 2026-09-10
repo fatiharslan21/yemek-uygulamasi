@@ -9,7 +9,14 @@ export const INGREDIENT_BY_ID = Object.fromEntries(
   INGREDIENTS.map((item) => [item.id, item]),
 ) as Record<string, IngredientDefinition>
 
-export const RECIPE_CATALOG: Recipe[] = [...BASE_RECIPES, ...EXTRA_RECIPES, ...EXPANDED_RECIPES]
+const CORE_RECIPE_IDS = new Set([...BASE_RECIPES, ...EXTRA_RECIPES].map((recipe) => recipe.id))
+const NORMALIZED_EXPANDED_RECIPES: Recipe[] = EXPANDED_RECIPES.map((recipe) => ({
+  ...recipe,
+  id: CORE_RECIPE_IDS.has(recipe.id) ? `${recipe.id}-alt` : recipe.id,
+  ingredients: recipe.ingredients.filter((ingredient) => ingredient.quantity > 0),
+}))
+
+export const RECIPE_CATALOG: Recipe[] = [...BASE_RECIPES, ...EXTRA_RECIPES, ...NORMALIZED_EXPANDED_RECIPES]
 
 export const RECIPE_LIBRARY_STATS = {
   recipes: RECIPE_CATALOG.length,
