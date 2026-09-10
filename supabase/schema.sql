@@ -21,3 +21,8 @@ on public.user_state
 for update
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+create policy "Users can delete their own Lokma state"
+on public.user_state
+for delete
+using (auth.uid() = user_id);
