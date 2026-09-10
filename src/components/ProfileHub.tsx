@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { RECIPE_CATALOG } from '../data/recipeCatalog'
 import { CloudAccountPanel } from './CloudAccountPanel'
+import { LocalBackupPanel } from './LocalBackupPanel'
 import { LegalCenter } from './LegalCenter'
 import { PlanHistoryPanel } from './PlanHistoryPanel'
 import { WeightTracker } from './WeightTracker'
 import { loadAppPreferences, saveAppPreferences, type AppPreferences } from '../services/appPreferences'
+import { cloudConfigured } from '../services/cloudClient'
 import { loadFavoriteRecipeIds, saveFavoriteRecipeIds } from '../services/favoritesStorage'
 import type { UserPlanProfile } from '../types'
 import '../profile-hub.css'
@@ -64,7 +66,7 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
         <article><span>⚖️ Plan kilosu</span><strong>{profile.weight} kg</strong><small>hedef hesabında kullanılıyor</small></article>
       </section>
 
-      <CloudAccountPanel />
+      {cloudConfigured ? <CloudAccountPanel /> : <LocalBackupPanel />}
       <WeightTracker startingWeight={profile.weight} />
 
       <section className="profile-section shell">
@@ -79,7 +81,7 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
       <section className="profile-section shell app-settings-card">
         <div className="profile-section-head"><div><span>🎛️</span><div><small>Uygulama ayarları</small><h2>Lokma nasıl davransın?</h2><p>Bu ayarlar yalnızca bu cihazdaki deneyimini değiştirir.</p></div></div></div>
         <label className="settings-switch-row"><div><strong>Favorileri yeni plana kat</strong><small>Sevdiğin tariflere ölçülü seçim bonusu verir.</small></div><input type="checkbox" checked={preferences.favoriteBiasEnabled} onChange={(event) => patchPreference('favoriteBiasEnabled', event.target.checked)} /><span /></label>
-        <label className="settings-switch-row"><div><strong>Yeni haftada son tartımı kullan</strong><small>Mevcut hafta değişmez; 7 gün bittiğinde yeni menü önizlemesi son kayıtlı kilonla hesaplanır.</small></div><input type="checkbox" checked={preferences.useLatestWeightForRenewal} onChange={(event) => patchPreference('useLatestWeightForRenewal', event.target.checked)} /><span /></label>
+        <label className="settings-switch-row"><div><strong>Yeni haftada son tartımı kullan</strong><small>Mevcut hafta değişmez; plan dönemi bittiğinde yeni menü önizlemesi son kayıtlı kilonla hesaplanır.</small></div><input type="checkbox" checked={preferences.useLatestWeightForRenewal} onChange={(event) => patchPreference('useLatestWeightForRenewal', event.target.checked)} /><span /></label>
         <label className="settings-switch-row"><div><strong>Hareketleri azalt</strong><small>Animasyon ve geçişleri minimuma indirir.</small></div><input type="checkbox" checked={preferences.reducedMotion} onChange={(event) => patchPreference('reducedMotion', event.target.checked)} /><span /></label>
         <label className="settings-switch-row"><div><strong>Daha büyük yazılar</strong><small>Kart ve açıklama metinlerini yaklaşık %10 büyütür.</small></div><input type="checkbox" checked={preferences.largerText} onChange={(event) => patchPreference('largerText', event.target.checked)} /><span /></label>
         <label className="settings-switch-row"><div><strong>Yüksek kontrast</strong><small>Metin, çerçeve ve odak işaretlerini daha belirgin yapar.</small></div><input type="checkbox" checked={preferences.highContrast} onChange={(event) => patchPreference('highContrast', event.target.checked)} /><span /></label>
@@ -89,7 +91,7 @@ export function ProfileHub({ profile, onBack, onEditPreferences, onAbout, onRese
       <LegalCenter />
 
       <section className="profile-section shell profile-data-card">
-        <div><span>🔐</span><div><strong>Planın uygulamayı kapatsan da bu cihazda açık kalır</strong><p>Profil, aktif plan, günlük işaretler, favoriler, kilo kayıtları ve geçmiş planlar cihazda saklanır. Uygulamayı silmek veya uygulama verilerini temizlemek bu yerel kayıtları silebilir. Hesap bağlantısı etkinleştirildiğinde bu verileri isteğe bağlı olarak buluta yedekleyebilirsin.</p></div></div>
+        <div><span>🔐</span><div><strong>Planın uygulamayı kapatsan da bu cihazda açık kalır</strong><p>Profil, aktif plan, günlük işaretler, favoriler, kilo kayıtları ve geçmiş planlar cihazda saklanır. Uygulamayı silmek veya uygulama verilerini temizlemek bu kayıtları silebilir. {cloudConfigured ? 'İstersen hesabınla ayrıca buluta yedekleyebilirsin.' : 'Profil bölümünden tek dosyalık yedek indirip daha sonra geri yükleyebilirsin.'}</p></div></div>
         <button type="button" onClick={onResetAll}>Tüm yerel veriyi sıfırla</button>
       </section>
     </main>
