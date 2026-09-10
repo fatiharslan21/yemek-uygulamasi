@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { RECIPE_LIBRARY_STATS } from '../data/recipeCatalog'
-import { swapMealInEditedPlan } from '../engine/planEditor'
+import { rebuildEditedPlan, swapMealInEditedPlan } from '../engine/planEditor'
 import { generateWeeklyPlan } from '../engine/planEngine'
-import type { UserPlanProfile, WeeklyPlan } from '../types'
+import { MealAlternativesSheet } from './MealAlternativesSheet'
+import type { Recipe, UserPlanProfile, WeeklyPlan } from '../types'
 import '../menu-approval.css'
 
 type MenuApprovalProps = {
@@ -10,6 +11,8 @@ type MenuApprovalProps = {
   onApprove: (plan: WeeklyPlan, seed: number) => void
   onEdit: () => void
 }
+
+type OptionTarget = { dayIndex: number; mealIndex: number } | null
 
 function money(value: number) {
   return Math.round(value).toLocaleString('tr-TR')
@@ -31,15 +34,27 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
   const [plan, setPlan] = useState<WeeklyPlan>(() => generateWeeklyPlan(profile, 1))
   const [changedMeals, setChangedMeals] = useState<Set<string>>(() => new Set())
   const [message, setMessage] = useState<string | null>(null)
+  const [optionTarget, setOptionTarget] = useState<OptionTarget>(null)
   const budgetOkay = plan.remainingBudget >= 0
   const placeholderCount = plan.days.flatMap((day) => day.meals).filter((meal) => isPlaceholderRecipe(meal.recipeId)).length
+  const optionMeal = optionTarget ? plan.days[optionTarget.dayIndex]?.meals[optionTarget.mealIndex] : undefined
 
   const regenerate = () => {
     const nextSeed = seed + 1
     setSeed(nextSeed)
     setPlan(generateWeeklyPlan(profile, nextSeed))
     setChangedMeals(new Set())
+    setOptionTarget(null)
     setMessage('Hafta yeni bir kombinasyonla hazırlandı. Tüm menüyü yeniden inceleyebilirsin. ✨')
+  }
+
+  const markChanged = (mealId?: string) => {
+    if (!mealId) return
+    setChangedMeals((currentSet) => {
+      const next = new Set(currentSet)
+      next.add(mealId)
+      return next
+    })
   }
 
   const swapMeal = (dayIndex: number, mealIndex: number) => {
@@ -54,12 +69,40 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
     }
     const nextMeal = nextPlan.days[dayIndex]?.meals[mealIndex]
     setPlan(nextPlan)
-    setChangedMeals((currentSet) => {
-      const next = new Set(currentSet)
-      if (nextMeal) next.add(nextMeal.id)
-      return next
-    })
+    markChanged(nextMeal?.id)
     setMessage(`${current.title} yerine ${nextMeal?.title ?? 'yeni bir alternatif'} koydum. Bütçe ve alışveriş listesi de yeniden hesaplandı.`)
+  }
+
+  const selectAlternative = (recipe: Recipe) => {
+    if (!optionTarget) return
+    const current = plan.days[optionTarget.dayIndex]?.meals[optionTarget.mealIndex]
+    if (!current) return
+
+    const days = plan.days.map((day) => ({ ...day, meals: day.meals.map((meal) => ({ ...meal })) }))
+    const replacementId = `${optionTarget.dayIndex}-${optionTarget.mealIndex}-${recipe.id}-selected-${swapSeed + 1}`
+    days[optionTarget.dayIndex].meals[optionTarget.mealIndex] = {
+      id: replacementId,
+      recipeId: recipe.id,
+      slot: current.slot,
+      title: recipe.title,
+      subtitle: recipe.subtitle,
+      emoji: recipe.emoji,
+      source: recipe.source,
+      calories: recipe.calories,
+      protein: recipe.protein,
+      estimatedPrice: recipe.estimatedPrice * profile.people,
+      tags: recipe.tags,
+    }
+
+    const nextPlan = rebuildEditedPlan(profile, days, {
+      adjustedForBudget: plan.adjustedForBudget,
+      convertedOutsideMeals: plan.convertedOutsideMeals,
+    })
+    setSwapSeed((value) => value + 1)
+    setPlan(nextPlan)
+    markChanged(replacementId)
+    setOptionTarget(null)
+    setMessage(`${recipe.title} menüne eklendi. Bütçe ve alışveriş listesi yeniden hesaplandı. ✓`)
   }
 
   const approve = () => {
@@ -84,8 +127,8 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
       <section className="menu-approval-hero shell">
         <span className="eyebrow">🍽️ Önce menünü gör</span>
         <h1>İşte {profile.days} günlük yemek menün.</h1>
-        <p>Plan başlamadan önce tamamını incele. Tek bir öğünü sevmediysen yalnızca onu değiştirebilir, istersen bütün menüyü yeniden oluşturabilirsin.</p>
-        <div className="menu-variety-note">✨ {RECIPE_LIBRARY_STATS.recipes} farklı yemek seçeneğinden sana uyanlar arasından hazırlandı. “Değiştir” dedikçe uygun alternatifler arasında dolaşabilirsin.</div>
+        <p>Plan başlamadan önce tamamını incele. Tek bir öğünü sevmediysen rastgele değiştirebilir veya “Seçenekler”den alternatifleri kendin seçebilirsin.</p>
+        <div className="menu-variety-note">✨ {RECIPE_LIBRARY_STATS.recipes} farklı yemek seçeneğinden sana uyanlar arasından hazırlandı. Her öğünde 12’ye kadar uygun alternatifi açıp karşılaştırabilirsin.</div>
         <div className="menu-approval-metrics">
           <article><span>💸 Haftalık tahmin</span><strong>{money(plan.totalCost)} ₺</strong><small>{money(profile.budget)} ₺ bütçe</small></article>
           <article><span>🔥 Günlük ortalama</span><strong>{plan.averageCalories} kcal</strong><small>hedef ≈ {plan.nutritionTargets.calories}</small></article>
@@ -107,7 +150,10 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
                   <div className={`menu-approval-meal ${changedMeals.has(meal.id) ? 'was-changed' : ''} ${placeholder ? 'needs-attention' : ''}`} key={meal.id}>
                     <span className="menu-approval-meal-emoji" aria-hidden="true">{meal.emoji}</span>
                     <div><small>{meal.slot} • {sourceEmoji(meal.source)} {meal.source}</small><strong>{meal.title}</strong><p>{placeholder ? 'Bu öğün için uygun gerçek tarif bulunamadı.' : `${meal.calories} kcal • ${meal.protein} g protein`}</p>{changedMeals.has(meal.id) && <em>✓ senin değişikliğin</em>}{placeholder && <em className="needs-attention-label">⚠️ düzenleme gerekli</em>}</div>
-                    <button type="button" className="menu-meal-swap" onClick={() => swapMeal(dayIndex, mealIndex)} aria-label={`${meal.title} öğününü değiştir`}>↻<span>Değiştir</span></button>
+                    <div className="menu-meal-actions">
+                      <button type="button" className="menu-meal-swap" onClick={() => swapMeal(dayIndex, mealIndex)} aria-label={`${meal.title} öğününü rastgele değiştir`}>↻<span>Rastgele</span></button>
+                      <button type="button" className="menu-meal-options-button" onClick={() => setOptionTarget({ dayIndex, mealIndex })} aria-label={`${meal.title} için alternatifleri aç`}>☰<span>Seçenekler</span></button>
+                    </div>
                   </div>
                 )
               })}
@@ -124,6 +170,10 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
           <button type="button" className="menu-approve" disabled={placeholderCount > 0} onClick={approve}>✓ Bu menüyü onayla</button>
         </div>
       </section>
+
+      {optionMeal && optionTarget && (
+        <MealAlternativesSheet meal={optionMeal} profile={profile} onClose={() => setOptionTarget(null)} onSelect={selectAlternative} />
+      )}
     </main>
   )
 }
