@@ -60,13 +60,26 @@ export function CloudAccountPanel() {
   useEffect(() => {
     const handleOnline = () => setOnline(true)
     const handleOffline = () => setOnline(false)
+    const handleNativeRecovery = () => {
+      setRecoveryMode(true)
+      setMessage('Şifre yenileme bağlantın doğrulandı. Şimdi yeni şifreni belirleyebilirsin.')
+    }
+    const handleNativeRecoveryError = () => {
+      setRecoveryMode(false)
+      setMessage('Şifre yenileme bağlantısı açılamadı veya süresi dolmuş olabilir. Yeni bir bağlantı isteyebilirsin.')
+    }
+
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
+    window.addEventListener('lokma:password-recovery', handleNativeRecovery)
+    window.addEventListener('lokma:password-recovery-error', handleNativeRecoveryError)
 
     if (!cloudConfigured) {
       return () => {
         window.removeEventListener('online', handleOnline)
         window.removeEventListener('offline', handleOffline)
+        window.removeEventListener('lokma:password-recovery', handleNativeRecovery)
+        window.removeEventListener('lokma:password-recovery-error', handleNativeRecoveryError)
       }
     }
 
@@ -91,6 +104,8 @@ export function CloudAccountPanel() {
       unsubscribe()
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
+      window.removeEventListener('lokma:password-recovery', handleNativeRecovery)
+      window.removeEventListener('lokma:password-recovery-error', handleNativeRecoveryError)
     }
   }, [])
 
@@ -200,7 +215,7 @@ export function CloudAccountPanel() {
       {!cloudConfigured ? (
         <div className="cloud-not-configured">
           <span>🔌</span>
-          <div><strong>Bulut bağlantısı henüz bu kurulumda etkin değil.</strong><p>Uygulama local-first çalışmaya devam ediyor. Supabase proje anahtarları eklendiğinde hesap ve senkronizasyon bu kartta otomatik açılacak.</p></div>
+          <div><strong>Bulut bağlantısı henüz bu kurulumda etkin değil.</strong><p>Uygulama local-first çalışmaya devam ediyor. Hesap servisi bağlandığında bu karttan giriş, yedekleme ve cihazlar arası taşıma açılacak.</p></div>
         </div>
       ) : recoveryMode ? (
         <div className="cloud-auth-box cloud-recovery-box">
