@@ -2,6 +2,7 @@ import { useMemo, type CSSProperties } from 'react'
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { MealBusinessLine } from './MealBusinessLine'
 import { MealPrepPanel } from './MealPrepPanel'
+import { WeekRecap } from './WeekRecap'
 import { formatPlanDate, greetingForNow, planDayIndex } from '../services/planCalendar'
 import type { MealActivityStatus } from '../services/planSessionStorage'
 import type { PlannedMeal, UserPlanProfile, WeeklyPlan } from '../types'
@@ -115,13 +116,13 @@ export function TodayView({
   if (planExpired) {
     return (
       <section className="today-page shell">
-        <div className="today-expired-card">
-          <div className="today-expired-emoji">🌱</div>
-          <span className="eyebrow">Plan döngüsü tamamlandı</span>
-          <h1>{profile.name ? `${profile.name}, ` : ''}bu planın {plan.days.length} günü bitti.</h1>
-          <p>Eski haftanı geçmişe kaydedip mevcut tercihlerinle yeni bir menü hazırlayacağız. Yeni hafta, sen menüyü görüp onayladıktan sonra başlayacak.</p>
-          <button type="button" onClick={requestFreshPlan}>🍽️ Yeni haftanın menüsünü gör</button>
-        </div>
+        <WeekRecap
+          profile={profile}
+          plan={plan}
+          planStartedAt={planStartedAt}
+          mealStatuses={mealStatuses}
+          onNewWeek={requestFreshPlan}
+        />
       </section>
     )
   }
