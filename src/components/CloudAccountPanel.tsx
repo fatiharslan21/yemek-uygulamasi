@@ -18,6 +18,7 @@ import {
   restoreLocalCloudSnapshot,
   type CloudBackupInfo,
 } from '../services/cloudSync'
+import { clearPendingPasswordRecovery, hasPendingPasswordRecovery } from '../services/nativeAuthLinks'
 import '../cloud-account.css'
 
 type AuthMode = 'signin' | 'signup'
@@ -42,11 +43,11 @@ export function CloudAccountPanel() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [recoveryMode, setRecoveryMode] = useState(false)
+  const [recoveryMode, setRecoveryMode] = useState(() => hasPendingPasswordRecovery())
   const [backupInfo, setBackupInfo] = useState<CloudBackupInfo>({ exists: false, recordCount: 0 })
   const [busy, setBusy] = useState(false)
   const [online, setOnline] = useState(() => navigator.onLine)
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(() => hasPendingPasswordRecovery() ? 'Şifre yenileme bağlantın doğrulandı. Şimdi yeni şifreni belirleyebilirsin.' : null)
 
   const refreshBackupInfo = async () => {
     if (!cloudConfigured || !navigator.onLine) return
@@ -66,6 +67,7 @@ export function CloudAccountPanel() {
     }
     const handleNativeRecoveryError = () => {
       setRecoveryMode(false)
+      clearPendingPasswordRecovery()
       setMessage('Şifre yenileme bağlantısı açılamadı veya süresi dolmuş olabilir. Yeni bir bağlantı isteyebilirsin.')
     }
 
@@ -163,6 +165,7 @@ export function CloudAccountPanel() {
     await updateCloudPassword(newPassword)
     setNewPassword('')
     setConfirmPassword('')
+    clearPendingPasswordRecovery()
     setRecoveryMode(false)
     setMessage('Şifren güncellendi. Hesabını kullanmaya devam edebilirsin. ✓')
   })
