@@ -11,8 +11,8 @@
     "mobile:doctor": "cap doctor",
     "mobile:copy": "npm run build && cap copy",
     "mobile:sync": "npm run build && cap sync",
-    "mobile:sync:android": "npm run build && cap sync android",
-    "mobile:sync:ios": "npm run build && cap sync ios",
+    "mobile:sync:android": "npm run build && cap sync android && node scripts/patch-native.mjs android",
+    "mobile:sync:ios": "npm run build && cap sync ios && node scripts/patch-native.mjs ios",
     "mobile:add:android": "cap add android",
     "mobile:add:ios": "cap add ios",
     "mobile:open:android": "cap open android",
@@ -21,6 +21,7 @@
     "mobile:prepare:ios": "npm run mobile:sync:ios && cap open ios"
   },
   "dependencies": {
+    "@capacitor/app": "8.1.1",
     "@capacitor/core": "8.5.1",
     "@supabase/supabase-js": "2.116.0",
     "react": "^18.3.1",
