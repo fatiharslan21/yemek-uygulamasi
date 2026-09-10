@@ -11,6 +11,7 @@ import { loadSavedAppState, saveAppState } from './services/appStorage'
 import { clearAllLokmaLocalData } from './services/localData'
 import { localDateKey } from './services/planCalendar'
 import { savePlanSession } from './services/planSessionStorage'
+import { loadWeightHistory } from './services/weightTrackingStorage'
 import type { UserPlanProfile, WeeklyPlan } from './types'
 import './onboarding.css'
 import './location-ui.css'
@@ -59,6 +60,14 @@ function App() {
     }
     const requestRenewalApproval = (event: Event) => {
       event.preventDefault()
+      const preferences = loadAppPreferences()
+      if (preferences.useLatestWeightForRenewal) {
+        const history = loadWeightHistory()
+        const latest = history[history.length - 1]
+        if (latest && Number.isFinite(latest.weight)) {
+          setProfile((current) => ({ ...current, weight: latest.weight }))
+        }
+      }
       setScreen('approval')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
