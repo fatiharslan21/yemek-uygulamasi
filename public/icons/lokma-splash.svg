@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1290 2796" role="img" aria-label="Lokma açılış ekranı">
+  <rect width="1290" height="2796" fill="#f7f4eb"/>
+  <g transform="translate(389 960)">
+    <rect width="512" height="512" rx="116" fill="#315f49"/>
+    <ellipse cx="258" cy="278" rx="112" ry="132" transform="rotate(-20 258 278)" fill="#f5df52"/>
+    <path d="M326 139c34-38 77-47 112-27-6 45-36 77-91 83-13-14-20-33-21-56Z" fill="#bcd56f"/>
+    <path d="M310 170c-9 17-14 35-16 54" stroke="#204b38" stroke-width="18" stroke-linecap="round"/>
+  </g>
+  <text x="645" y="1600" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="118" font-weight="700" fill="#202923">lokma</text>
+  <text x="645" y="1700" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="42" fill="#6f7972">Haftanı planla. Sepetini sadeleştir.</text>
+</svg>
