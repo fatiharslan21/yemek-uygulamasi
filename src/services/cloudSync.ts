@@ -12,7 +12,7 @@ import {
 
 export type CloudSnapshot = LocalSnapshot
 export type { LocalSyncFreshness }
-export { getLocalSyncFreshness }
+export { getLocalSyncFreshness, markSnapshotSynced }
 export { exportLocalSnapshotFile, parseLocalSnapshotFile } from './localBackup'
 export { buildLocalSnapshot as buildLocalCloudSnapshot, restoreLocalSnapshot as restoreLocalCloudSnapshot }
 
