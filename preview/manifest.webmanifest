@@ -1,0 +1,12 @@
+{
+  "name": "Lokma — Akıllı Yemek Planlayıcı",
+  "short_name": "Lokma",
+  "description": "Bütçene, hedeflerine, mutfağına ve konumuna göre akıllı yemek planı.",
+  "lang": "tr-TR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f4eb",
+  "theme_color": "#315f49",
+  "orientation": "portrait-primary",
+  "categories": ["food", "lifestyle", "health"]
+}
