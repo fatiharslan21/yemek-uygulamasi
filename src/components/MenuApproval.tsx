@@ -20,6 +20,10 @@ function sourceEmoji(source: string) {
   return '🍽️'
 }
 
+function isPlaceholderRecipe(recipeId: string) {
+  return recipeId.startsWith('safe-fallback-')
+}
+
 export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) {
   const [seed, setSeed] = useState(1)
   const [swapSeed, setSwapSeed] = useState(50)
@@ -27,6 +31,7 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
   const [changedMeals, setChangedMeals] = useState<Set<string>>(() => new Set())
   const [message, setMessage] = useState<string | null>(null)
   const budgetOkay = plan.remainingBudget >= 0
+  const placeholderCount = plan.days.flatMap((day) => day.meals).filter((meal) => isPlaceholderRecipe(meal.recipeId)).length
 
   const regenerate = () => {
     const nextSeed = seed + 1
@@ -56,6 +61,18 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
     setMessage(`${current.title} yerine ${nextMeal?.title ?? 'yeni bir alternatif'} koydum. Bütçe ve alışveriş listesi de yeniden hesaplandı.`)
   }
 
+  const approve = () => {
+    if (placeholderCount > 0) {
+      setMessage('Bu menüde gerçek tarifle doldurulamayan öğün var. Güvenli bir menü başlatmak için tercihlerini biraz genişlet veya o öğünü değiştir.')
+      return
+    }
+    if (!budgetOkay) {
+      const confirmed = window.confirm(`Bu menü haftalık bütçeni yaklaşık ${money(Math.abs(plan.remainingBudget))} ₺ aşıyor. Yine de bu menüyü başlatmak istiyor musun?`)
+      if (!confirmed) return
+    }
+    onApprove(plan, seed)
+  }
+
   return (
     <main className="menu-approval-page">
       <header className="menu-approval-top shell">
@@ -71,8 +88,9 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
           <article><span>💸 Haftalık tahmin</span><strong>{money(plan.totalCost)} ₺</strong><small>{money(profile.budget)} ₺ bütçe</small></article>
           <article><span>🔥 Günlük ortalama</span><strong>{plan.averageCalories} kcal</strong><small>hedef ≈ {plan.nutritionTargets.calories}</small></article>
           <article><span>💪 Protein</span><strong>{plan.averageProtein} g</strong><small>hedef ≈ {plan.nutritionTargets.protein} g</small></article>
-          <article className={budgetOkay ? 'is-good' : 'is-warning'}><span>{budgetOkay ? '✓ Bütçe durumu' : '⚠️ Bütçe durumu'}</span><strong>{budgetOkay ? `${money(plan.remainingBudget)} ₺ pay` : `${money(Math.abs(plan.remainingBudget))} ₺ aşım`}</strong><small>{budgetOkay ? 'limit içinde' : 'birkaç öğünü değiştirebilirsin'}</small></article>
+          <article className={budgetOkay ? 'is-good' : 'is-warning'}><span>{budgetOkay ? '✓ Bütçe durumu' : '⚠️ Bütçe durumu'}</span><strong>{budgetOkay ? `${money(plan.remainingBudget)} ₺ pay` : `${money(Math.abs(plan.remainingBudget))} ₺ aşım`}</strong><small>{budgetOkay ? 'limit içinde' : 'onaydan önce uyaracağız'}</small></article>
         </div>
+        {placeholderCount > 0 && <div className="menu-approval-blocker" role="alert">⚠️ {placeholderCount} öğün mevcut filtrelerle gerçek bir tarifle eşleşmedi. Bu menü bu haliyle başlatılamaz; ilgili öğünü değiştir veya tercihlerini düzenle.</div>}
         {message && <div className="menu-approval-message" role="status" aria-live="polite">{message}</div>}
       </section>
 
@@ -81,13 +99,16 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
           <article className="menu-approval-day" key={day.index}>
             <header><div><span>{String(day.index + 1).padStart(2, '0')}</span><h2>{day.name}</h2></div><small>≈ {money(day.totalEstimatedPrice)} ₺</small></header>
             <div className="menu-approval-meals">
-              {day.meals.map((meal, mealIndex) => (
-                <div className={`menu-approval-meal ${changedMeals.has(meal.id) ? 'was-changed' : ''}`} key={meal.id}>
-                  <span className="menu-approval-meal-emoji" aria-hidden="true">{meal.emoji}</span>
-                  <div><small>{meal.slot} • {sourceEmoji(meal.source)} {meal.source}</small><strong>{meal.title}</strong><p>{meal.calories} kcal • {meal.protein} g protein</p>{changedMeals.has(meal.id) && <em>✓ senin değişikliğin</em>}</div>
-                  <button type="button" className="menu-meal-swap" onClick={() => swapMeal(dayIndex, mealIndex)} aria-label={`${meal.title} öğününü değiştir`}>↻<span>Değiştir</span></button>
-                </div>
-              ))}
+              {day.meals.map((meal, mealIndex) => {
+                const placeholder = isPlaceholderRecipe(meal.recipeId)
+                return (
+                  <div className={`menu-approval-meal ${changedMeals.has(meal.id) ? 'was-changed' : ''} ${placeholder ? 'needs-attention' : ''}`} key={meal.id}>
+                    <span className="menu-approval-meal-emoji" aria-hidden="true">{meal.emoji}</span>
+                    <div><small>{meal.slot} • {sourceEmoji(meal.source)} {meal.source}</small><strong>{meal.title}</strong><p>{placeholder ? 'Bu öğün için uygun gerçek tarif bulunamadı.' : `${meal.calories} kcal • ${meal.protein} g protein`}</p>{changedMeals.has(meal.id) && <em>✓ senin değişikliğin</em>}{placeholder && <em className="needs-attention-label">⚠️ düzenleme gerekli</em>}</div>
+                    <button type="button" className="menu-meal-swap" onClick={() => swapMeal(dayIndex, mealIndex)} aria-label={`${meal.title} öğününü değiştir`}>↻<span>Değiştir</span></button>
+                  </div>
+                )
+              })}
             </div>
           </article>
         ))}
@@ -98,7 +119,7 @@ export function MenuApproval({ profile, onApprove, onEdit }: MenuApprovalProps) 
         <div className="menu-approval-actions">
           <button type="button" className="menu-edit" onClick={onEdit}>← Tercihleri düzenle</button>
           <button type="button" className="menu-regenerate" onClick={regenerate}>🎲 Baştan oluştur</button>
-          <button type="button" className="menu-approve" onClick={() => onApprove(plan, seed)}>✓ Bu menüyü onayla</button>
+          <button type="button" className="menu-approve" disabled={placeholderCount > 0} onClick={approve}>✓ Bu menüyü onayla</button>
         </div>
       </section>
     </main>
