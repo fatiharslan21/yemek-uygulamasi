@@ -1,8 +1,10 @@
 import fs from 'node:fs'
 
-const recipeFiles = ['src/data/baseRecipeCatalog.ts', 'src/data/extraRecipes.ts', 'src/data/expandedRecipes.ts']
+const coreRecipeFiles = ['src/data/baseRecipeCatalog.ts', 'src/data/extraRecipes.ts']
+const expandedRecipeFile = 'src/data/expandedRecipes.ts'
 const ingredientFiles = ['src/data/baseRecipeCatalog.ts', 'src/data/extraRecipes.ts']
-const sources = recipeFiles.map((file) => ({ file, text: fs.readFileSync(file, 'utf8') }))
+const allRecipeFiles = [...coreRecipeFiles, expandedRecipeFile]
+const sources = allRecipeFiles.map((file) => ({ file, text: fs.readFileSync(file, 'utf8') }))
 const failures = []
 
 function unique(values) {
@@ -19,25 +21,38 @@ function matches(text, pattern) {
   return [...text.matchAll(pattern)].map((match) => match[1])
 }
 
+function recipeIdsFromText(text, includeOutsideHelpers = false) {
+  const objectIds = matches(text, /\bid: '([^']+)', title:/g)
+  const helperIds = includeOutsideHelpers ? matches(text, /outside\('([^']+)'/g) : []
+  return [...objectIds, ...helperIds]
+}
+
 const ingredientIds = ingredientFiles.flatMap((file) => matches(fs.readFileSync(file, 'utf8'), /\{ id: '([^']+)', name:/g))
-const objectRecipeIds = sources.flatMap(({ text }) => matches(text, /\bid: '([^']+)', title:/g))
-const outsideRecipeIds = matches(fs.readFileSync('src/data/expandedRecipes.ts', 'utf8'), /outside\('([^']+)'/g)
-const recipeIds = [...objectRecipeIds, ...outsideRecipeIds]
+const coreRecipeIds = coreRecipeFiles.flatMap((file) => recipeIdsFromText(fs.readFileSync(file, 'utf8')))
+const expandedText = fs.readFileSync(expandedRecipeFile, 'utf8')
+const expandedRawIds = recipeIdsFromText(expandedText, true)
+const coreIdSet = new Set(coreRecipeIds)
+const normalizedExpandedIds = expandedRawIds.map((id) => coreIdSet.has(id) ? `${id}-alt` : id)
+const runtimeRecipeIds = [...coreRecipeIds, ...normalizedExpandedIds]
 const ingredientUses = sources.flatMap(({ text }) => matches(text, /ingredientId: '([^']+)'/g))
 const unknownIngredients = [...new Set(ingredientUses.filter((id) => !ingredientIds.includes(id)))]
 const duplicateIngredientIds = duplicates(ingredientIds)
-const duplicateRecipeIds = duplicates(recipeIds)
+const duplicateCoreRecipeIds = duplicates(coreRecipeIds)
+const duplicateExpandedRawIds = duplicates(expandedRawIds)
+const duplicateRuntimeRecipeIds = duplicates(runtimeRecipeIds)
+const aliasedExpandedCount = expandedRawIds.filter((id) => coreIdSet.has(id)).length
 
 if (!unique(ingredientIds)) failures.push(`Malzeme ID listesinde tekrar var: ${duplicateIngredientIds.join(', ')}`)
-if (!unique(recipeIds)) failures.push(`Tarif ID listesinde tekrar var: ${duplicateRecipeIds.join(', ')}`)
+if (!unique(coreRecipeIds)) failures.push(`Ana katalog tarif ID tekrarları: ${duplicateCoreRecipeIds.join(', ')}`)
+if (!unique(expandedRawIds)) failures.push(`Genişletilmiş katalog kendi içinde tekrar içeriyor: ${duplicateExpandedRawIds.join(', ')}`)
+if (!unique(runtimeRecipeIds)) failures.push(`Runtime tarif ID tekrarları: ${duplicateRuntimeRecipeIds.join(', ')}`)
 if (unknownIngredients.length) failures.push(`Tanımsız malzeme referansı: ${unknownIngredients.join(', ')}`)
-if (recipeIds.length < 150) failures.push(`Tarif çeşitliliği beklenen seviyenin altında: ${recipeIds.length} < 150`)
+if (runtimeRecipeIds.length < 150) failures.push(`Tarif çeşitliliği beklenen seviyenin altında: ${runtimeRecipeIds.length} < 150`)
 
-const baseAndExtra = sources.filter(({ file }) => file !== 'src/data/expandedRecipes.ts').map(({ text }) => text).join('\n')
-const expanded = fs.readFileSync('src/data/expandedRecipes.ts', 'utf8')
-const homeCount = (baseAndExtra.match(/source: 'Evde'/g) ?? []).length + (expanded.match(/home\(\{ id:/g) ?? []).length
-const deliveryCount = (baseAndExtra.match(/source: 'Sipariş'/g) ?? []).length + (expanded.match(/outside\('[^']+',\s*'[^']+',\s*'[^']+',\s*'Sipariş'/g) ?? []).length
-const dineOutCount = (baseAndExtra.match(/source: 'Dışarı'/g) ?? []).length + (expanded.match(/outside\('[^']+',\s*'[^']+',\s*'[^']+',\s*'Dışarı'/g) ?? []).length
+const coreText = coreRecipeFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n')
+const homeCount = (coreText.match(/source: 'Evde'/g) ?? []).length + (expandedText.match(/home\(\{ id:/g) ?? []).length
+const deliveryCount = (coreText.match(/source: 'Sipariş'/g) ?? []).length + (expandedText.match(/outside\('[^']+',\s*'[^']+',\s*'[^']+',\s*'Sipariş'/g) ?? []).length
+const dineOutCount = (coreText.match(/source: 'Dışarı'/g) ?? []).length + (expandedText.match(/outside\('[^']+',\s*'[^']+',\s*'[^']+',\s*'Dışarı'/g) ?? []).length
 
 if (homeCount < 100) failures.push(`Ev yemeği çeşitliliği düşük: ${homeCount}`)
 if (deliveryCount < 20) failures.push(`Sipariş çeşitliliği düşük: ${deliveryCount}`)
@@ -63,5 +78,6 @@ if (failures.length) {
 }
 
 console.log('✓ Lokma yemek kataloğu sağlam')
-console.log(`✓ ${recipeIds.length} tarif • ${ingredientIds.length} malzeme`)
+console.log(`✓ ${runtimeRecipeIds.length} tarif • ${ingredientIds.length} malzeme`)
 console.log(`✓ ${homeCount} evde • ${deliveryCount} sipariş • ${dineOutCount} dışarı seçeneği`)
+if (aliasedExpandedCount > 0) console.log(`✓ ${aliasedExpandedCount} eski ID çakışması runtime'da -alt ile güvenli ayrıştırılıyor`)
