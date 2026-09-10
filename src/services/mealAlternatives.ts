@@ -1,6 +1,7 @@
 import { INGREDIENT_BY_ID, RECIPE_CATALOG } from '../data/recipeCatalog'
 import { recipePassesCatalogSafety } from './catalogSafety'
 import { recipeSupportsEquipment } from './cookingCompatibility'
+import { getRecipePreferenceScore } from './mealPreferenceSignals'
 import type { PlannedMeal, Recipe, UserPlanProfile } from '../types'
 
 function normalize(text: string) {
@@ -38,7 +39,8 @@ function score(recipe: Recipe, current: PlannedMeal, profile: UserPlanProfile) {
   const priceGap = Math.abs(price - current.estimatedPrice) / Math.max(1, current.estimatedPrice)
   const sourcePenalty = recipe.source === current.source ? 0 : 0.55
   const overlap = recipe.tags.filter((tag) => current.tags.includes(tag)).length
-  return calorieGap * .55 + proteinGap * .65 + priceGap * .4 + sourcePenalty - overlap * .08
+  const learnedPreference = getRecipePreferenceScore(recipe)
+  return calorieGap * .55 + proteinGap * .65 + priceGap * .4 + sourcePenalty - overlap * .08 - Math.max(-1.5, Math.min(1.5, learnedPreference)) * .18
 }
 
 export function getMealAlternatives(current: PlannedMeal, profile: UserPlanProfile, limit = 12) {
